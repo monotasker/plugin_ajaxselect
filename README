@@ -1,8 +1,9 @@
-    This plugin creates a select widget wrapped that can be refreshed via ajax without resetting
-    the entire form. It also provides an "add new" button that allows users to add a new item to 
-    the table that populates the select widget via ajax. The widget is then automatically refreshed 
-    via ajax so that the new item is visible as a select option and can be chosen. All of this 
-    happens without a page or form refresh so that data entered in other fields is not lost or submitted.
+README for plugin_ajaxselect, a widget plugin for the web2py web development framework
+Developed by Ian W. Scott (monotasker), scottianw@gmail.com
+Copyright Ian W. Scott, 2012.
+Licensed under the GNU General Public License v. 3 (http://www.gnu.org/copyleft/gpl.html)
+
+This plugin creates a select widget wrapped that can be refreshed via ajax without resetting the entire form. It also provides an "add new" button that allows users to add a new item to the table that populates the select widget via ajax. The widget is then automatically refreshed via ajax so that the new item is visible as a select option and can be chosen. All of this happens without a page or form refresh so that data entered in other fields is not lost or submitted.
 
     Installation: 
     1. download the plugin file;

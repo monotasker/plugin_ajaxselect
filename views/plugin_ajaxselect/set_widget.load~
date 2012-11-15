@@ -1,0 +1,9 @@
+<span class="taglist" style="display:block;">
+    {{#for t in taglist:}}
+        {{#=t}}
+    {{#pass}}
+</span>
+{{for w in widget:}}
+{{=w}}
+{{pass}}
+

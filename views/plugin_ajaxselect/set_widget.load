@@ -1,0 +1,14 @@
+{{for w in wrapper:}}
+    {{=w}}
+{{pass}}
+
+<script>
+        $('ul.sortable').sortable({
+            placeholder: 'ui-state-highlight',
+            stop: function(event, ui){ 
+                var $taglist = $(event.target).find('li');
+                whenSortStops($taglist); 
+            } 
+        });
+        $('ul.sortable').disableSelection();
+</script>

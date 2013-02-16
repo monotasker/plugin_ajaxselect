@@ -1,0 +1,26 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+AjaxSelect	plugin_ajaxselect.py	/^class AjaxSelect(object):$/;"	c
+FilteredAjaxSelect	plugin_ajaxselect.py	/^class FilteredAjaxSelect(AjaxSelect):$/;"	c
+FilteredOptionsWidget	plugin_ajaxselect.py	/^class FilteredOptionsWidget(OptionsWidget):$/;"	c
+__init__	plugin_ajaxselect.py	/^    def __init__(self):$/;"	m	class:AjaxSelect
+adder	plugin_ajaxselect.py	/^    def adder(self, wrappername, linktable, uargs, uvars, form_name):$/;"	m	class:AjaxSelect
+choose_val	plugin_ajaxselect.py	/^    def choose_val(self, val, wrappername):$/;"	m	class:AjaxSelect
+classes	plugin_ajaxselect.py	/^    def classes(self, linktable, restricted, restrictor, lister, sortable):$/;"	m	class:AjaxSelect
+clean	plugin_ajaxselect.py	/^    def clean(self, value, multi):$/;"	m	class:AjaxSelect
+create_widget	plugin_ajaxselect.py	/^    def create_widget(self, field, value, clean_val, multi, restricted, rval):$/;"	m	class:FilteredAjaxSelect
+create_widget	plugin_ajaxselect.py	/^    def create_widget(self, field, value, clean_val, multi, restricted, rval,$/;"	m	class:AjaxSelect
+hidden_ajax_field	plugin_ajaxselect.py	/^    def hidden_ajax_field(self, wrappername, clean_val):$/;"	m	class:AjaxSelect
+linklist	plugin_ajaxselect.py	/^    def linklist(self, value, linktable, uargs, uvars, sortable):$/;"	m	class:AjaxSelect
+linktable	plugin_ajaxselect.py	/^    def linktable(self, field):$/;"	m	class:AjaxSelect
+refresher	plugin_ajaxselect.py	/^    def refresher(self, wrappername, linktable, uargs, uvars):$/;"	m	class:AjaxSelect
+restricted	plugin_ajaxselect.py	/^    def restricted(self, restricted):$/;"	m	class:AjaxSelect
+restricted	plugin_ajaxselect.py	/^    def restricted(self, restricted):$/;"	m	class:FilteredAjaxSelect
+taglist	plugin_ajaxselect.py	/^    def taglist(self, value, linktable, sortable):$/;"	m	class:AjaxSelect
+widget	plugin_ajaxselect.py	/^    def widget(cls, field, value, restricted, rval, **attributes):$/;"	m	class:FilteredOptionsWidget
+widget	plugin_ajaxselect.py	/^    def widget(self, field, value, restricted=None, refresher=False,$/;"	m	class:AjaxSelect
+wrappername	plugin_ajaxselect.py	/^    def wrappername(self, fieldset):$/;"	m	class:AjaxSelect

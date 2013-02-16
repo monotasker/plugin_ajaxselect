@@ -1,0 +1,19 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+Array	plugin_ajaxselect.js	/^if (!Array.prototype.indexOf) {$/;"	c
+Array.filter	plugin_ajaxselect.js	/^      Array.prototype.filter = function(fun \/*, thisp *\/)$/;"	m
+Array.indexOf	plugin_ajaxselect.js	/^    Array.prototype.indexOf = function (searchElement \/*, fromIndex *\/ ) {$/;"	m
+editlink	plugin_ajaxselect.js	/^function editlink(info, args, vars, newval, newtext){$/;"	f
+geturl	plugin_ajaxselect.js	/^function geturl($td){$/;"	f
+info	plugin_ajaxselect.js	/^function info($p){$/;"	f
+isValue	plugin_ajaxselect.js	/^function isValue(x){$/;"	f
+linkinfo	plugin_ajaxselect.js	/^function linkinfo(url, vlist){$/;"	f
+setval	plugin_ajaxselect.js	/^function setval(appname, inputname){$/;"	f
+tag	plugin_ajaxselect.js	/^function tag(newval, newtext){$/;"	f
+update_refresher	plugin_ajaxselect.js	/^function update_refresher(url, vars, wrappername){$/;"	f
+update_vars	plugin_ajaxselect.js	/^function update_vars(vars, val){$/;"	f
+whenSortStops	plugin_ajaxselect.js	/^function whenSortStops($taglist){$/;"	f

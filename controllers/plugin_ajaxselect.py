@@ -1,8 +1,9 @@
 from plugin_ajaxselect import AjaxSelect, FilteredAjaxSelect
 if 0:
-    from gluon import current, dal
-    request, session = current.request, current.session
+    from gluon import current, dal, LOAD, SQLFORM, URL
+    request, session, response = current.request, current.session, current.response
     db = dal.DAL()
+
 
 def set_widget():
     """
@@ -33,7 +34,7 @@ def set_widget():
 
     #get current value of widget
     wrp = request.vars['wrappername']
-    if wrp in session and session[wrp] != None:
+    if wrp in session and session[wrp] is not None:
         value = session[request.vars['wrappername']]
     else:
         valstring = request.vars['value']
@@ -48,27 +49,22 @@ def set_widget():
     if verbose == 1:
         print 'value:', value
 
-    if request.vars['restricted'] in (None, 'None'):
-        w = AjaxSelect().widget(field, value,
-            refresher = request.vars['refresher'],
-            adder = request.vars['adder'],
-            restricted = request.vars['restricted'],
-            restrictor = request.vars['restrictor'],
-            multi = request.vars['multi'],
-            lister = request.vars['lister'],
-            sortable = request.vars['sortable'])
-    else:
-        w = FilteredAjaxSelect().widget(field, value,
-            refresher = request.vars['refresher'],
-            adder = request.vars['adder'],
-            restricted = request.vars['restricted'],
-            restrictor = request.vars['restrictor'],
-            multi = request.vars['multi'],
-            lister = request.vars['lister'],
-            sortable = request.vars['sortable'],
-            rval = rval)
+    kwargs = {'linktable': linktable,
+              'refresher': request.vars['refresher'],
+              'adder': request.vars['adder'],
+              'restricted': request.vars['restricted'],
+              'restrictor': request.vars['restrictor'],
+              'multi': request.vars['multi'],
+              'lister': request.vars['lister'],
+              'sortable': request.vars['sortable']}
 
-    return dict(wrapper = w, linktable = linktable, tablename = tablename)
+    if request.vars['restricted'] in (None, 'None'):
+        w = AjaxSelect(field, value, **kwargs).widget()
+    else:
+        w = FilteredAjaxSelect(field, value, rval=rval, **kwargs).widget()
+
+    return dict(wrapper=w, linktable=linktable, tablename=tablename)
+
 
 def setval():
     """Called when user changes value of AjaxSelect widget. Stores the current
@@ -97,23 +93,24 @@ def setval():
 
     return curval
 
+
 def set_form_wrapper():
     """
     Creates the LOAD helper to hold the modal form for creating a new item in
     the linked table
     """
-    print 'hi there'
     if len(request.args) > 2:
         form_maker = 'linked_edit_form.load'
     else:
         form_maker = 'linked_create_form.load'
 
     formwrapper = LOAD('plugin_ajaxselect', form_maker,
-                       args = request.args,
-                       vars = request.vars,
-                       ajax = True)
+                       args=request.args,
+                       vars=request.vars,
+                       ajax=True)
 
-    return dict(formwrapper = formwrapper)
+    return {'formwrapper': formwrapper}
+
 
 def linked_edit_form():
     """
@@ -137,8 +134,8 @@ def linked_edit_form():
     form = SQLFORM(db[linktable], this_row)
 
     comp_url = URL('plugin_ajaxselect', 'set_widget.load',
-                   args = [tablename, fieldname],
-                   vars = request.vars)
+                   args=[tablename, fieldname],
+                   vars=request.vars)
 
     if form.process().accepted:
         response.flash = 'form accepted'
@@ -146,7 +143,8 @@ def linked_edit_form():
     else:
         response.error = 'form was not processed'
 
-    return dict(form = form)
+    return {'form': form}
+
 
 def linked_create_form():
     """
@@ -170,8 +168,8 @@ def linked_create_form():
     form = SQLFORM(db[linktable])
 
     comp_url = URL('plugin_ajaxselect', 'set_widget.load',
-                   args = [tablename, fieldname],
-                   vars = request.vars)
+                   args=[tablename, fieldname],
+                   vars=request.vars)
 
     if form.process().accepted:
         response.flash = 'form accepted'
@@ -179,4 +177,4 @@ def linked_create_form():
     else:
         response.error = 'form was not processed'
 
-    return dict(form = form)
+    return dict(form=form)

@@ -5,51 +5,50 @@ $('form').live('submit', function(){
     //TODO: clear the session value on submit (showing old value)
 });
 
-$('.add_trigger').live('click', function(event){
 //open modal dialog (using jquery-ui dialog) for adder form
-    var the_id = $(this).attr('id');
-    var parts = the_id.split('_');
-    var linktable = parts[0];
-
-    var dlname = linktable + '_adder_form';
-    if($('#' + dlname).length){
-        $('#' + dlname).html('').dialog('open');
-    } else {
-        var newd = $('<div id="' + dlname + '" class="ajaxselect_dialog"></div>');
-        newd.dialog({
-            autoOpen:false,
-            closeOnEscape:false,
-            height:600,
-            width:700,
-            title:'Edit ',
-        });
-        $('#' + dlname).dialog('open');
-    }
-    return false
+$('.add_trigger').live('click', function(event){
+    open_dialog($(this), 'adder');
 });
 
-$('.edit_trigger').live('click', function(event){
 //open modal dialog (using jquery-ui dialog) for edit form
-    var the_id = $(this).attr('id');
+$('.edit_trigger').live('click', function(event){
+    open_dialog($(this), 'editlist');
+});
+
+//open modal dialog (using jquery-ui dialog) for an ajax form
+function open_dialog($trigger, action){
+
+    //get linktable from trigger id
+    var the_id = $trigger.attr('id');
     var parts = the_id.split('_');
     var linktable = parts[0];
-    var dlname = linktable + '_editlist_form';
+    // make title for modal form from action
+    if(action == 'editlist'){
+        formtitle = 'Edit ';
+    } else {
+        formtitle = 'Add new item ';
+    }
+
+    // build name for dialog
+    var dlname = linktable + '_' + action + '_form';
+    // If a dialog with that name exists, reuse it. Otherwise, create a new one
     if($('#' + dlname).length){
         $('#' + dlname).html('').dialog('open');
     } else {
         var newd = $('<div id="' + dlname + '" class="ajaxselect_dialog"></div>');
         newd.dialog({
-            autoOpen:false,
-            closeOnEscape:false,
-            height:600,
-            width:700,
-            title:'Edit ',
+            autoOpen: false,
+            closeOnEscape: false,
+            height: 600,
+            width: 700,
+            title: formtitle,
         });
+        //open the dialog
         $('#' + dlname).dialog('open');
     }
-
     return false
-});
+}
+
 
 //TODO: Bind a separate function to the select if multi=False or no taglist
 //when select value is changed, update
@@ -184,9 +183,9 @@ $('a.tag_remover').live('click', function(event){
     event.preventDefault();
 });
 
-$('.restrictor select').live('change', function(event){
 //constrain and refresh appropriate select widgets if restrictor widget's
 //value is changed
+$('.restrictor select').live('change', function(event){
     //get selected value of the restrictor widget to use in constraining the
     //target widget
     var new_val = $(this).find('option:selected').val();

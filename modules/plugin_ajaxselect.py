@@ -98,35 +98,46 @@ class AjaxSelect(object):
     #TODO: allow for restrictor argument to take list and filter multiple
     #other fields
 
-    def __init__(self, field, value,
-                 refresher=False, adder=True,
+    def __init__(self, field, value, linktable,
+                 refresher=None, adder=True,
                  restricted=None, restrictor=None,
                  multi=False, lister=False,
                  rval=None, sortable=False):
-        self.verbose = 0
+        self.verbose = 1
         if self.verbose == 1:
             print '------------------------------------------------'
             print 'starting modules/plugin_ajaxselect __init__'
-
-        self.fieldset = str(field).split('.')
-        self.wrappername = self.wrappername(self.fieldset)
-        self.linktable = self.linktable(self.field)  # find table referenced by widget
-        self.formname = '%s_adder_form' % self.linktable  # for referenced table form
+        # raw args
+        self.field = field
+        self.refresher = refresher
+        self.adder = adder
+        self.restricted = self.restrict(restricted)  # isolate setting of param
+        self.restrictor = restrictor
         self.multi = multi
+        self.lister = lister
+        self.rval = rval
+        self.sortable = sortable
+
+        # find table referenced by widget
+        self.fieldset = str(field).split('.')
+        self.linktable = self.get_linktable(field)
+
+        # processed variables
+        self.wrappername = self.get_wrappername(self.fieldset)
+        self.form_name = '%s_adder_form' % self.linktable  # for referenced table form
 
         if self.verbose == 1:
             print multi, type(multi)
 
         # get the field value (choosing db or session here)
-        self.value = self.choose_val(self.value, self.wrappername)
-        self.clean_val = self.sanitize_valstring(self.value, self.multi)
-        self.uargs = self.fieldset  # args for add and refresh urls
-        self.restricted = self.restricted(restricted)  # isolate setting of param
-
+        self.value = self.choose_val(value)
+        self.clean_val = self.sanitize_valstring(value)
+        # args for add and refresh urls
+        self.uargs = self.fieldset
         # vars for add and refresh urls
         self.uvars = {'linktable': self.linktable,
                       'wrappername': self.wrappername,
-                      'refresher': self.refresher,
+                      'refresher': refresher,
                       'adder': self.adder,
                       'restrictor': self.restrictor,
                       'multi': self.multi,
@@ -146,28 +157,24 @@ class AjaxSelect(object):
             print 'starting AjaxSelect.widget() for ,', self.field
 
         # prepare classes for widget wrapper
-        w_classes = self.classes(self.linktable, self.restricted,
+        w_classes = self.get_classes(self.linktable, self.restricted,
                                  self.restrictor, self.lister, self.sortable)
         # create SPAN to wrap widget
         wrapper = SPAN(_id=self.wrappername, _class=w_classes)
 
         # create and add content of SPAN
-        widget = self.create_widget(self.field, self.value, self.clean_val,
-                                    self.multi, self.restricted,
-                                    self.rval, self.sortable)
-        hiddenfield = self.hidden_ajax_field(self.wrappername,
-                                             self.clean_val)
-        refresher = self.refresher(self.wrappername, self.linktable,
+        widget = self.create_widget()
+        hiddenfield = self.hidden_ajax_field()
+        refreshlink = self.make_refresher(self.wrappername, self.linktable,
                                    self.uargs, self.uvars)
-        adder = self.adder(self.wrappername, self.linktable, self.uargs,
-                           self.uvars, self.form_name)
-        wrapper.append(widget, hiddenfield, refresher, adder)
+        adder = self.make_adder(self.wrappername, self.linktable)
+        wrapper.components.extend([widget, hiddenfield, refreshlink, adder])
 
         # create and add tags/links if multiple select widget
         if self.multi and (self.lister == 'simple'):
-            taglist = self.taglist(self.value, self.linktable, self.sortable)
+            taglist = self.make_taglist(self.value, self.linktable, self.sortable)
         elif self.multi and (self.lister == 'editlinks'):
-            taglist = self.linklist(self.value, self.linktable, self.uargs,
+            taglist = self.make_linklist(self.value, self.linktable, self.uargs,
                                     self.uvars, self.sortable)
         else:
             taglist = ''
@@ -175,17 +182,47 @@ class AjaxSelect(object):
 
         return wrapper
 
-    def wrappername(self, fieldset):
+    def get_widget_index(self):
         """
-        Assemble id for the widget wrapper element.
+        Return for other widgets pointing to same linktable
         """
-        return '%s_%s_loader' % (fieldset[0], fieldset[1])
+        db = current.db
+        table = db[self.field.table]
+        thefields = []
+        for f in [f for f in table.fields]:
+            if table[f].widget:
+                try:
+                    if table[f].requires.ktable == self.linktable:
+                        thefields.append(f)
+                except AttributeError:
+                    try:
+                        if table[f].requires[0].ktable == self.linktable:
+                            thefields.append(f)
+                    except IndexError:
+                        pass  # FIXME: problem with list:string fields
+        if len(thefields) > 1:  # FIXME: why are single fields picked up?
+            current_i = thefields.index(self.fieldset[1])
+            return current_i
+        else:
+            return None
 
-    def linktable(self):
+    def get_wrappername(self, fieldset):
+        """
+        Return id string for the widget wrapper element.
+
+        Make sure that widgets using the same link table have distinct ids,
+        using get_widget_index() method.
+        """
+        windex = self.get_widget_index()
+        if not windex:
+            windex = 0
+        name = '{}_{}_loader{}'.format(fieldset[0], fieldset[1], str(windex))
+        return name
+
+    def get_linktable(self, field):
         """
         Return name of table for this widget from its 'requires' attribute.
         """
-        field = self.field
         if not isinstance(field.requires, list):
             requires = [field.requires]
         else:
@@ -214,29 +251,33 @@ class AjaxSelect(object):
                 val = None  # to handle an empty list
         return val
 
-    def choose_val(self):
+    def choose_val(self, value):
         """
         Use value stored in session if changes to widget haven't been sent to
         db session val must be reset to None each time it is checked.
         """
         session = current.session
         if (self.wrappername in session) and (session[self.wrappername]):
-            self.value = copy(session[self.wrappername])
+            val = copy(session[self.wrappername])
             session[self.wrappername] = None
         else:
+            val = value
             session[self.wrappername] = None
 
-        return self.sanitize_int(self.value)
+        return self.sanitize_int(val)
 
-    def sanitize_valstring(self):
+    def sanitize_valstring(self, value):
         """
         Return list:reference value string without problematic characters.
         """
-        if not self.multi in [None, 'False'] and isinstance(self.value, list):
-            clean = ','.join(map(str, self.value))
-        return clean
+        if (not self.multi in [None, 'False']) and isinstance(value, list):
+            return ','.join(map(str, value))
+        elif value:
+            return value
+        else:
+            return None
 
-    def restricted(self, restricted):
+    def restrict(self, restricted):
         """Isolate creation of this value so that it can be overridden in
         child classes."""
         return None
@@ -282,7 +323,7 @@ class AjaxSelect(object):
                 _value=self.clean_val)
         return i
 
-    def refresher(self, wrappername, linktable, uargs, uvars):
+    def make_refresher(self, wrappername, linktable, uargs, uvars):
         '''
         Return link to refresh this widget via ajax.
 
@@ -307,7 +348,7 @@ class AjaxSelect(object):
 
         return refresh_link
 
-    def adder(self, wrappername, linktable):
+    def make_adder(self, wrappername, linktable):
         '''Build link for adding a new entry to the linked table'''
 
         #create id for adder link
@@ -321,7 +362,7 @@ class AjaxSelect(object):
 
         return add_link
 
-    def taglist(self):
+    def make_taglist(self):
         """Build a list of selected widget options to be displayed as a
         list of 'tags' below the widget."""
         db = current.db
@@ -339,7 +380,7 @@ class AjaxSelect(object):
             taglist.append(listitem)
         return taglist
 
-    def linklist(self, value, linktable, uargs, uvars, sortable):
+    def make_linklist(self, value, linktable, uargs, uvars, sortable):
         """
         Build a list of selected widget options to be displayed as a
         list of 'tags' below the widget.
@@ -365,7 +406,7 @@ class AjaxSelect(object):
                 except TypeError:
                     formatted = myrow[1]
                 trigger_id = '%s_editlist_trigger_%i' % (self.linktable, int(v))
-                linkargs = self.uargs[:]  # slice for new obj so vals don't pile up
+                linkargs = self.uargs[:]  # new obj so vals don't pile up
                 linkargs.append(v)
                 ln = LI(SPAN(formatted), _id=v, _class='editlink tag')
                 ln.insert(0, A('X', _class='tag_remover'))
@@ -380,7 +421,7 @@ class AjaxSelect(object):
                 ll.append(ln)
         return ll
 
-    def classes(self, linktable, restricted, restrictor, lister, sortable):
+    def get_classes(self, linktable, restricted, restrictor, lister, sortable):
         """
         build classes for wrapper span to indicate filtering relationships
         """
@@ -408,7 +449,7 @@ class FilteredAjaxSelect(AjaxSelect):
     on the value set in another AjaxSelect widget in the same form.
     """
 
-    def restricted(self, restricted):
+    def restrict(self, restricted):
         """Override parent restricted() method to allow a defined parameter
         with this name to take effect."""
 

@@ -10,16 +10,10 @@ def set_widget():
     creates a replacement select widget using the AjaxSelect or
     FilteredAjaxSelect classes and returns the new widget via ajax.
     """
-    verbose = 1
-    if verbose == 1:
-        print '========================================'
-        print 'starting controller set_widget()'
     #get variables to build widget for the proper field
     #TODO: Can I get the table from db[field]._table or something like that?
     tablename = request.args[0]
     fieldname = request.args[1]
-    if verbose == 1:
-        print 'for widget: ||', tablename, '|', fieldname, '||'
     table = db[tablename]
     field = table[fieldname]
     requires = field.requires
@@ -27,10 +21,7 @@ def set_widget():
         requires = [requires]
     else:
         requires = requires
-
     linktable = requires[0].ktable
-    if verbose == 1:
-        print 'linked to table |', linktable, '|'
 
     #get current value of widget
     wrp = request.vars['wrappername']
@@ -46,11 +37,7 @@ def set_widget():
     else:
         rval = None
 
-    if verbose == 1:
-        print 'value:', value
-
-    kwargs = {'linktable': linktable,
-              'refresher': request.vars['refresher'],
+    kwargs = {'refresher': request.vars['refresher'],
               'adder': request.vars['adder'],
               'restricted': request.vars['restricted'],
               'restrictor': request.vars['restrictor'],
@@ -59,9 +46,9 @@ def set_widget():
               'sortable': request.vars['sortable']}
 
     if request.vars['restricted'] in (None, 'None'):
-        w = AjaxSelect(field, value, **kwargs).widget()
+        w = AjaxSelect(field, value, linktable, **kwargs).widget()
     else:
-        w = FilteredAjaxSelect(field, value, rval=rval, **kwargs).widget()
+        w = FilteredAjaxSelect(field, value, linktable, rval=rval, **kwargs).widget()
 
     return dict(wrapper=w, linktable=linktable, tablename=tablename)
 
@@ -71,13 +58,9 @@ def setval():
     widget state in a session object to be used if the widget is refreshed
     before the form is processed."""
 
-    verbose = 1
-
     theinput = request.args[0]
     wrappername = theinput.replace('_input', '')
     curval = request.vars[theinput]
-    if verbose == 1:
-        print 'in setval() raw: ', curval
 
     # error handling to deal with strange occasional conversion of
     #returned val to list
@@ -86,10 +69,6 @@ def setval():
     curval = str(curval).split(',')
     curvalInts = [int(i) for i in curval]
     session[wrappername] = curvalInts
-
-    if verbose == 1:
-        print 'in setval() processed: ', curvalInts
-        print 'in setval(), session[', wrappername, '=', session[wrappername]
 
     return curval
 

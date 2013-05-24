@@ -5,6 +5,19 @@ import copy
 #TODO: add ListWidget as another option?
 
 
+def listcheck(val):
+    """
+    Returns the value as a list, whether or not it was a list to begin with.
+
+    This is useful for avoiding index errors in situations where a value might
+    be a length-1 list or might be an int or string.
+    """
+    if isinstance(val, list):
+        return val
+    else:
+        return [val]
+
+
 class AjaxSelect(object):
     """
     This plugin creates a select widget wrapped that can be refreshed via ajax

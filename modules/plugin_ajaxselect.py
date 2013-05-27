@@ -383,9 +383,7 @@ class AjaxSelect(object):
         if self.sortable:
             classes += ' sortable'
         taglist = UL(_class=classes)
-        if type(self.value) != list:
-            self.value = [self.value]
-        for v in self.value:
+        for v in listcheck(self.value):
             the_row = db(db[self.linktable].id == v).select().first()
             format_string = db[self.linktable]._format % the_row
             listitem = LI(format_string, _id=v, _class='tag')
@@ -408,9 +406,7 @@ class AjaxSelect(object):
 
         #append the currently selected items to the list
         if self.value:
-            if type(self.value) != list:
-                self.value = [self.value]
-            for v in self.value:
+            for v in listcheck(self.value):
                 myrow = db(db[self.linktable].id == v).select().first()
                 if myrow is None:
                     continue

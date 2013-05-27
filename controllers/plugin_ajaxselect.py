@@ -1,4 +1,4 @@
-from plugin_ajaxselect import AjaxSelect, FilteredAjaxSelect
+from plugin_ajaxselect import AjaxSelect, FilteredAjaxSelect, listcheck
 if 0:
     from gluon import current, dal, LOAD, SQLFORM, URL
     request, session, response = current.request, current.session, current.response
@@ -60,14 +60,9 @@ def setval():
 
     theinput = request.args[0]
     wrappername = theinput.replace('_input', '')
-    curval = request.vars[theinput]
-
-    # error handling to deal with strange occasional conversion of
-    #returned val to list
-    if type(curval) == list:
-        curval = curval[0]
+    curval = listcheck(request.vars[theinput])[0]
     curval = str(curval).split(',')
-    curvalInts = [int(i) for i in curval]
+    curvalInts = [int(i) for i in curval if i]  # condition for None val
     session[wrappername] = curvalInts
 
     return curval

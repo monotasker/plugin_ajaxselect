@@ -1,17 +1,17 @@
 //TODO: Continuing bug -- reordering is only saved to db if widget is refreshed before the form is submitted. Maybe the session value isn't being set properly by the selectEnd function?
 //TODO: Continuing bug -- changes to the value appear to be reversed after form submission, but clicking on the item in the list (i.e., refreshing the form) makes the changed values appear. Debug output from module suggests that *both* values are coming from the db!!
-$('form').live('submit', function(){
+$('form').on('submit', function(){
     console.log('ouch!');
     //TODO: clear the session value on submit (showing old value)
 });
 
 //open modal dialog (using jquery-ui dialog) for adder form
-$('.add_trigger').live('click', function(event){
+$('.add_trigger').on('click', function(event){
     open_dialog($(this), 'adder');
 });
 
 //open modal dialog (using jquery-ui dialog) for edit form
-$('.edit_trigger').live('click', function(event){
+$('.edit_trigger').on('click', function(event){
     open_dialog($(this), 'editlist');
 });
 
@@ -52,7 +52,7 @@ function open_dialog($trigger, action){
 
 //TODO: Bind a separate function to the select if multi=False or no taglist
 //when select value is changed, update
-$('.plugin_ajaxselect select[multiple="multiple"] option').live('click', function(event){
+$('.plugin_ajaxselect select[multiple="multiple"] option').on('click', function(event){
     //COMMON get landmarks to navigate dom =====================
     var $p = $(this).parents('span');
     //get $select, wrappername, $theinput, theinput, $td in info object
@@ -139,7 +139,7 @@ function whenSortStops($taglist){
 //TODO: change values in tag links? in adder link?
 
 //remove an option by clicking on the remover icon in a tag
-$('a.tag_remover').live('click', function(event){
+$('a.tag_remover').on('click', function(event){
     //COMMON get landmarks to navigate dom =====================
     var $p = $(this).parents('span');
     //get $select, wrappername, $theinput, theinput, $td in info object
@@ -185,7 +185,7 @@ $('a.tag_remover').live('click', function(event){
 
 //constrain and refresh appropriate select widgets if restrictor widget's
 //value is changed
-$('.restrictor select').live('change', function(event){
+$('.restrictor select').on('change', function(event){
     //get selected value of the restrictor widget to use in constraining the
     //target widget
     var new_val = $(this).find('option:selected').val();

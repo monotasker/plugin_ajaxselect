@@ -1,8 +1,14 @@
-from gluon import current, SPAN, A, INPUT, UL, LI, OPTION, SELECT
+from gluon import current, SPAN, A, UL, LI, OPTION, SELECT
 from gluon.html import URL
 from gluon.sqlhtml import OptionsWidget, MultipleOptionsWidget
-import copy
+#import copy
 #TODO: add ListWidget as another option?
+
+"""
+AjaxSelect process flow
+
+AjaxSelect()
+"""
 
 
 def listcheck(val):
@@ -111,12 +117,14 @@ class AjaxSelect(object):
     #TODO: allow for restrictor argument to take list and filter multiple
     #other fields
 
-    def __init__(self, field, value, linktable,
+    def __init__(self, field, value,
                  refresher=None, adder=True,
                  restricted=None, restrictor=None,
                  multi=False, lister=False,
                  rval=None, sortable=False):
-        self.verbose = 1
+                 # removed 'linktable'
+
+        self.verbose = 0
         if self.verbose == 1:
             print '------------------------------------------------'
             print 'starting modules/plugin_ajaxselect __init__'
@@ -124,7 +132,8 @@ class AjaxSelect(object):
         self.field = field
         self.refresher = refresher
         self.adder = adder
-        self.restricted = self.restrict(restricted)  # isolate setting of param
+        # isolate setting of param for easy overriding in subclasses
+        self.restricted = self.restrict(restricted)
         self.restrictor = restrictor
         self.multi = multi
         self.lister = lister
@@ -139,12 +148,11 @@ class AjaxSelect(object):
         self.wrappername = self.get_wrappername(self.fieldset)
         self.form_name = '%s_adder_form' % self.linktable  # for referenced table form
 
-        if self.verbose == 1:
-            print multi, type(multi)
-
         # get the field value (choosing db or session here)
         self.value = self.choose_val(value)
-        self.clean_val = self.sanitize_valstring(value)
+        print 'value', value
+        print 'self.value:', self.value
+        self.clean_val = ','.join(map(str, value))
         # args for add and refresh urls
         self.uargs = self.fieldset
         # vars for add and refresh urls
@@ -164,31 +172,27 @@ class AjaxSelect(object):
         Main method to create the ajaxselect widget. Calls helper methods
         and returns the wrapper element containing all associated elements
         """
-        session, request = current.session, current.request
-        if self.verbose == 1:
-            print '-------------------------------------------------'
-            print 'starting AjaxSelect.widget() for ,', self.field
+        #session = current.session
+        #request = current.request
 
         # prepare classes for widget wrapper
-        w_classes = self.get_classes(self.linktable, self.restricted,
-                                 self.restrictor, self.lister, self.sortable)
+        wclasses = self.get_classes(self.linktable, self.restricted,
+                                    self.restrictor, self.lister, self.sortable)
         # create SPAN to wrap widget
-        wrapper = SPAN(_id=self.wrappername, _class=w_classes)
+        wrapper = SPAN(_id=self.wrappername, _class=wclasses)
 
         # create and add content of SPAN
         widget = self.create_widget()
-        hiddenfield = self.hidden_ajax_field()
         refreshlink = self.make_refresher(self.wrappername, self.linktable,
-                                   self.uargs, self.uvars)
+                                          self.uargs, self.uvars)
         adder = self.make_adder(self.wrappername, self.linktable)
-        wrapper.components.extend([widget, hiddenfield, refreshlink, adder])
+        wrapper.components.extend([widget, refreshlink, adder])
 
         # create and add tags/links if multiple select widget
         if self.multi and (self.lister == 'simple'):
-            taglist = self.make_taglist(self.value, self.linktable, self.sortable)
+            taglist = self.make_taglist()
         elif self.multi and (self.lister == 'editlinks'):
-            taglist = self.make_linklist(self.value, self.linktable, self.uargs,
-                                    self.uvars, self.sortable)
+            taglist = self.make_linklist()
         else:
             taglist = ''
         wrapper.append(taglist)
@@ -244,51 +248,52 @@ class AjaxSelect(object):
 
         return linktable
 
-    def sanitize_int(self, val):
+    def sanitize_int_list(self, val):
         """
-        Return val as an int and not as a single-item list.
+        Return val as a list of ints and not as plain int or str
         """
-        if type(val) == list:
-            try:
-                if (val == []) or (val[0] == '' and len(val) < 2):
-                    val = None
-                elif val and len(val) < 2:
-                    val = val[0]
-                else:
-                    val = [int(v) for v in val]
-            except ValueError, e:
-                print e
-                val = None  # to handle a blank string being passed to int(v)
-            except IndexError, e:
-                print e
-                val = None  # to handle an empty list
+        def sanitize_internal(val):
+            if not isinstance(val, int):
+                try:
+                    val = int(val)
+                except (ValueError, TypeError):
+                    val = None  # empty string or alphabetical
+            return val
+
+        if val and isinstance(val, list):
+            val = [sanitize_internal(v) for v in val]
+            val = [v for v in val if v]
+        elif isinstance(val, str):
+            val = val.split('|')
+            val = [sanitize_internal(v) for v in val]
+            val = [v for v in val if v]
+            val = val if len(val) else None
+        else:
+            val = sanitize_internal(val)
+            val = [val] if val else None
+
         return val
 
     def choose_val(self, value):
         """
         Use value stored in session if changes to widget haven't been sent to
         db session val must be reset to None each time it is checked.
+
+        Always returns the value either as a list of integers or None.
         """
         session = current.session
-        if (self.wrappername in session) and (session[self.wrappername]):
-            val = copy(session[self.wrappername])
-            session[self.wrappername] = None
-        else:
-            val = value
-            session[self.wrappername] = None
 
-        return self.sanitize_int(val)
-
-    def sanitize_valstring(self, value):
-        """
-        Return list:reference value string without problematic characters.
-        """
-        if (not self.multi in [None, 'False']) and isinstance(value, list):
-            return ','.join(map(str, value))
-        elif value:
-            return value
+        val = value
+        if (self.wrappername in session.keys()):
+            if session[self.wrappername]:
+                val = session[self.wrappername]
+                del session[self.wrappername]
+            else:
+                del session[self.wrappername]
         else:
-            return None
+            pass
+
+        return self.sanitize_int_list(val)
 
     def restrict(self, restricted):
         """Isolate creation of this value so that it can be overridden in
@@ -304,6 +309,7 @@ class AjaxSelect(object):
 
             #place selected items at end of sortable select widget
             if self.sortable:
+                print 'val: ', self.value
                 try:
                     for v in self.value:
                         opt = w.element(_value=v)
@@ -324,17 +330,6 @@ class AjaxSelect(object):
             w = OptionsWidget.widget(self.field, self.value)
 
         return w
-
-    def hidden_ajax_field(self):
-        """
-        Return hidden input to help send unsaved changes via ajax so that
-        they're preserved through a widget refresh
-        """
-        # TODO: this is unnecessary - fix ajax function
-        inputid = self.wrappername + '_input'
-        i = INPUT(_id=inputid, _name=inputid, _type='hidden',
-                _value=self.clean_val)
-        return i
 
     def make_refresher(self, wrappername, linktable, uargs, uvars):
         '''
@@ -385,7 +380,8 @@ class AjaxSelect(object):
         taglist = UL(_class=classes)
         for v in listcheck(self.value):
             the_row = db(db[self.linktable].id == v).select().first()
-            format_string = db[self.linktable]._format % the_row
+            fmt = db[self.linktable]._format
+            format_string = fmt(the_row) if callable(fmt) else fmt % the_row
             listitem = LI(format_string, _id=v, _class='tag')
             listitem.insert(0, A('x', _class='tag_remover'))
             taglist.append(listitem)
@@ -434,18 +430,16 @@ class AjaxSelect(object):
         """
         build classes for wrapper span to indicate filtering relationships
         """
-        classlist = 'plugin_ajaxselect '
-        if not self.restrictor in [None, 'False']:
-            classlist += '{} restrictor for_{} '.format(self.linktable,
-                                                     self.restrictor)
-        if self.restricted and restricted != 'False':
-            classlist += '{} restricted by_{}'.format(self.linktable,
-                                                   self.restricted)
-        if self.lister == 'simple':
+        classlist = 'plugin_ajaxselect {} '.format(linktable)
+        if not restrictor in [None, 'False']:
+            classlist += 'restrictor_for_{} '.format(restrictor)
+        if restricted and restricted != 'False':
+            classlist += 'restricted_by_{} '.format(restricted)
+        if lister == 'simple':
             classlist += 'lister_simple '
-        elif self.lister == 'editlinks':
+        elif lister == 'editlinks':
             classlist += 'lister_editlinks '
-        if self.sortable:
+        if sortable:
             classlist += 'sortable '
 
         return classlist

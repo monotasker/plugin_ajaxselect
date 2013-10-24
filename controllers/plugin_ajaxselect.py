@@ -1,14 +1,13 @@
-from plugin_ajaxselect import AjaxSelect, FilteredAjaxSelect, listcheck
+from plugin_ajaxselect import AjaxSelect, FilteredAjaxSelect
 if 0:
-    from gluon import current, dal, LOAD, SQLFORM, URL
+    from gluon import current, LOAD, SQLFORM, URL
     request, session, response = current.request, current.session, current.response
-    db = dal.DAL()
+    db = current.db
 
 
 def set_widget():
     """
-    creates a replacement select widget using the AjaxSelect or
-    FilteredAjaxSelect classes and returns the new widget via ajax.
+    Return a replacement AjaxSelect or FilteredAjaxSelect widget via ajax.
     """
     #get variables to build widget for the proper field
     #TODO: Can I get the table from db[field]._table or something like that?
@@ -16,28 +15,20 @@ def set_widget():
     fieldname = request.args[1]
     table = db[tablename]
     field = table[fieldname]
+    # FIXME: Since I'm getting link table in widget code, I don't need it here.
     requires = field.requires
     if not isinstance(requires, list):
         requires = [requires]
-    else:
-        requires = requires
     linktable = requires[0].ktable
 
-    #get current value of widget
-    wrp = request.vars['wrappername']
-    if wrp in session and session[wrp] is not None:
-        value = session[request.vars['wrappername']]
-    else:
-        valstring = request.vars['value']
-        #restore value to list since it was converted to string for url
-        value = valstring.split(',')
-
-    if 'rval' in request.vars:
-        rval = request.vars['rval']
-    else:
-        rval = None
-
+    wn = request.vars['wrappername']
+    value = request.vars['{}_select'.format(wn)]
+    print 'set_widget: value is', value
+    import pprint
+    pprint.pprint(request)
+    rval = request.vars['rval'] if 'rval' in request.vars.keys() else None
     kwargs = {'refresher': request.vars['refresher'],
+              'indx': request.vars['idx'],
               'adder': request.vars['adder'],
               'restricted': request.vars['restricted'],
               'restrictor': request.vars['restrictor'],
@@ -46,26 +37,26 @@ def set_widget():
               'sortable': request.vars['sortable']}
 
     if request.vars['restricted'] in (None, 'None'):
-        w = AjaxSelect(field, value, linktable, **kwargs).widget()
+        w = AjaxSelect(field, value, **kwargs).widget()
     else:
-        w = FilteredAjaxSelect(field, value, linktable, rval=rval, **kwargs).widget()
+        w = FilteredAjaxSelect(field, value, rval=rval, **kwargs).widget()
 
     return dict(wrapper=w, linktable=linktable, tablename=tablename)
 
 
-def setval():
-    """Called when user changes value of AjaxSelect widget. Stores the current
-    widget state in a session object to be used if the widget is refreshed
-    before the form is processed."""
+#def setval():
+    #"""Called when user changes value of AjaxSelect widget. Stores the current
+    #widget state in a session object to be used if the widget is refreshed
+    #before the form is processed."""
 
-    theinput = request.args[0]
-    wrappername = theinput.replace('_input', '')
-    curval = listcheck(request.vars[theinput])[0]
-    curval = str(curval).split(',')
-    curvalInts = [int(i) for i in curval if i]  # condition for None val
-    session[wrappername] = curvalInts
+    #theinput = request.args[0]
+    #wrappername = theinput.replace('_input', '')
+    #curval = listcheck(request.vars[theinput])[0]
+    #curval = str(curval).split(',')
+    #curvalInts = [int(i) for i in curval if i]  # condition for None val
+    #session[wrappername] = curvalInts
 
-    return curval
+    #return curval
 
 
 def set_form_wrapper():

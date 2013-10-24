@@ -1,20 +1,6 @@
-//TODO: Continuing bug -- reordering is only saved to db if widget is refreshed before the form is submitted. Maybe the session value isn't being set properly by the selectEnd function?
-//TODO: Continuing bug -- changes to the value appear to be reversed after form submission, but clicking on the item in the list (i.e., refreshing the form) makes the changed values appear. Debug output from module suggests that *both* values are coming from the db!!
-$('form').on('submit', function(){
-    console.log('ouch!');
-    //TODO: clear the session value on submit (showing old value)
-});
-
-//open modal dialog (using jquery-ui dialog) for adder form
-$('.add_trigger').on('click', function(event){
-    open_dialog($(this), 'adder');
-});
-
-//open modal dialog (using jquery-ui dialog) for edit form
-$('.edit_trigger').on('click', function(event){
-    open_dialog($(this), 'editlist');
-});
-
+// Javascript for the AjaxSelect and related widgets
+// part of the plugin_ajaxselect plugin for web2py
+//
 //open modal dialog (using jquery-ui dialog) for an ajax form
 function open_dialog($trigger, action){
 
@@ -36,15 +22,6 @@ function open_dialog($trigger, action){
         $('#' + dlname).html('').dialog('open');
     } else {
         var newd = $('<div id="' + dlname + '" class="ajaxselect_dialog"></div>');
-        newd.dialog({
-            autoOpen: false,
-            closeOnEscape: false,
-            height: 600,
-            width: 700,
-            title: formtitle,
-        });
-        //open the dialog
-        $('#' + dlname).dialog('open');
     }
     return false
 }
@@ -52,38 +29,22 @@ function open_dialog($trigger, action){
 
 //TODO: Bind a separate function to the select if multi=False or no taglist
 //when select value is changed, update
-$('.plugin_ajaxselect select[multiple="multiple"] option').on('click', function(event){
+function addtag(opt){
     //COMMON get landmarks to navigate dom =====================
-    var $p = $(this).parents('span');
-    //get $select, wrappername, $theinput, theinput, $td in info object
+    var $p = $(opt).parents('span');
+    //get $select, wrappername, $td in info object
     var myinfo = info($p);
-
-    //GENERATING NEW VALUE ======================================
-    var newval = $(this).val();
-    var newtext = $(this).text();
-    var theval = myinfo.$theinput.val();
-    theval += ',' + newval;
-
-    //COMMON VALUE UPDATING ======================================
-    //get url, args, vars, and appname in geturl object
     var r_url = geturl(myinfo.$td);
-    //update value in url variables
-    var url_vars = update_vars(r_url.vars, theval);
-    update_refresher(r_url.url, url_vars, myinfo.wrappername);
-    //set the hidden input and select widget to the new value
-    myinfo.$theinput.val(theval);
-    myinfo.$select.val(theval.split(','));
-    //update back end via ajax
-    setval(r_url.appname, myinfo.theinput);
 
-    //MODIFY TAG ELEMENTS =========================================
     //set the clicked option to selected
-    $(this).attr('selected', 'selected');
+    $(opt).attr('selected', 'selected');
     //add tag for this option to taglist
     var $taglist = myinfo.$td.find('.taglist');
-    var mylinkinfo = linkinfo(r_url.url, url_vars);
+    var mylinkinfo = linkinfo(r_url.url, r_url.vars);
+    var newval = $(opt).attr('value');
+    var newtext = $(opt).text();
     if($p.hasClass('lister_editlinks')){
-        var newtag = editlink(mylinkinfo, r_url.args, url_vars,
+        var newtag = editlink(mylinkinfo, r_url.args, r_url.vars,
                                     newval, newtext);
         $taglist.append(newtag);
     }
@@ -92,19 +53,16 @@ $('.plugin_ajaxselect select[multiple="multiple"] option').on('click', function(
         $taglist.append(newtag);
     }
     //make sure newly added tag is added to sortable binding
+    // FIXME: is this binding added initially?
     $('ul.sortable').sortable('refresh');
-
-    //CLEAN UP ====================================================
-    //prevent default behaviour, so that other options aren't de-selected
-    return false
-});
+    event.preventDefault();
+}
 
 //TODO: move binding of sortable here from set_widget.load and
 //listandedit/edit.load using plugin to provide 'create' event.
 function whenSortStops($taglist){
     //COMMON get landmarks to navigate dom =====================
     var $p = $taglist.first().parents('span');
-    //get $select, wrappername, $theinput, theinput, $td in info object
     var myinfo = info($p);
 
     //GENERATING NEW VALUE ======================================
@@ -115,17 +73,8 @@ function whenSortStops($taglist){
     });
     var theval = vals.join(',');
 
-    //COMMON VALUE UPDATING ======================================
-    //get url, args, vars, and appname in geturl object
-    var r_url = geturl(myinfo.$td);
-    //update value in url variables
-    var url_vars = update_vars(r_url.vars, theval);
-    update_refresher(r_url.url, url_vars, myinfo.wrappername);
-    //set hidden input and select widget to the new value
-    myinfo.$theinput.val(theval);
+    //set select widget to the new value
     myinfo.$select.val(vals);
-    //update back end via ajax
-    setval(r_url.appname, myinfo.theinput);
 
     //reorder options in widget
     for (var i = 0; i < vals.length; i++) {
@@ -136,7 +85,6 @@ function whenSortStops($taglist){
         $opt.insertAfter($opts.last());
     }
 }
-//TODO: change values in tag links? in adder link?
 
 //remove an option by clicking on the remover icon in a tag
 $('a.tag_remover').on('click', function(event){
@@ -222,12 +170,6 @@ $('.restrictor select').on('change', function(event){
     });
 });
 
-//utility - update stored web2py session value via ajax
-function setval(appname, inputname){
-    ajax('/' + appname + '/plugin_ajaxselect/setval/' + inputname,
-                                        ['"' + inputname + '"'], ':eval');
-}
-
 //utility - determine whether a string contains 'value='
 function isValue(x){
     re = /^(?!value=).*$/;
@@ -238,16 +180,13 @@ function isValue(x){
 function info($p){
     var wrappername = $p.attr('id');
     var $select = $p.find('select');
-    var $theinput = $p.find('input');
-    var theinput = $theinput.attr('id');
     var $td = $p.parents('li, td');
-    return {'wrappername':wrappername, '$select':$select,
-            '$theinput':$theinput, 'theinput':theinput, '$td':$td}
+    return {'wrappername':wrappername, '$select':$select, '$td':$td}
 }
 
 //utility - get url, a string with its args, and a string with its vars
 function geturl($td){
-    var r_url = $td.find('a.refresh_trigger').attr('href');
+    var r_url = $td.find('a.refresh_trigger').attr('onclick');
     var url_frag = r_url.match(/set_widget.load(.*)/);
     var url_args_vars = url_frag[1].split('?');
     var url_args = url_args_vars[0];
@@ -256,17 +195,6 @@ function geturl($td){
     console.log(url_vars_raw);
     return {'url':r_url, 'args':url_args,
             'vars':url_vars_raw, 'appname':appname}
-}
-
-//utility - update the 'value' attribute of a vars string
-// returns an array with the new vars
-function update_vars(vars, val){
-    var vlist = vars.split('&');
-    vlist = vlist.filter(isValue);
-    vlist = vlist.concat('value=' + val);
-    vars = vlist.join('&');
-    console.log(vars);
-    return vars
 }
 
 //utility - get misc info from r_url
@@ -278,16 +206,6 @@ function linkinfo(url, vlist){
     linkbase += '/views/plugin_ajaxselect/set_form_wrapper.load';
     var formname = linktable + '_editlist_form';
     return {'linktable':linktable, 'linkbase':linkbase, 'formname':formname}
-}
-
-//utility - update the 'value' attribute of refresh_trigger link
-function update_refresher(url, vars, wrappername){
-    var refresh_url = url.split('?')[0] + '?' + vars;
-    $('a.refresh_trigger').attr('href', refresh_url);
-    $('a.refresh_trigger').attr('onclick',
-            'web2py_component("' + refresh_url + '", "'
-            + wrappername + '"); return false;');
-    return 'True'
 }
 
 //utility - assemble and return tag with edit link

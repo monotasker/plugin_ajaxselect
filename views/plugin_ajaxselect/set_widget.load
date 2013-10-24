@@ -11,4 +11,7 @@
             } 
         });
         $('ul.sortable').disableSelection();
+        $('.plugin_ajaxselect select option').on('click', function(event){
+            addtag(event.target);
+        });
 </script>

@@ -113,14 +113,20 @@ class AjaxSelect(object):
     This should instantiate the sortable object after the list has been
     created. If you wish to set any parameters on the sortable it should be
     done in this script.
+
+    :param indx (int; defaults to 0): This value allows for multiple AjaxSelect
+    widgets referencing the same table from a single form. Each field within
+    the form's table should be given a different 'indx' value to differentiate
+    the widget from others. Without this differentiating value the widgets will
+    interfere with one another when any on of them is refreshed.
     """
     #TODO: allow for restrictor argument to take list and filter multiple
     #other fields
 
-    def __init__(self, field, value,
+    def __init__(self, field, value, indx=0,
                  refresher=None, adder=True,
                  restricted=None, restrictor=None,
-                 multi=False, lister=False,
+                 multi=True, lister=False,
                  rval=None, sortable=False):
                  # removed 'linktable'
 
@@ -130,6 +136,7 @@ class AjaxSelect(object):
             print 'starting modules/plugin_ajaxselect __init__'
         # raw args
         self.field = field
+        self.indx = indx
         self.refresher = refresher
         self.adder = adder
         # isolate setting of param for easy overriding in subclasses
@@ -156,7 +163,7 @@ class AjaxSelect(object):
         # args for add and refresh urls
         self.uargs = self.fieldset
         # vars for add and refresh urls
-        self.uvars = {'linktable': self.linktable,
+        self.uvars = {'indx': self.indx,
                       'wrappername': self.wrappername,
                       'refresher': refresher,
                       'adder': self.adder,
@@ -201,27 +208,34 @@ class AjaxSelect(object):
 
     def get_widget_index(self):
         """
-        Return for other widgets pointing to same linktable
+        Return an int differentiating widget from others referencing the same
+        table.
+
+        At present this simply returns the value of self.indx.
         """
-        db = current.db
-        table = db[self.field.table]
-        thefields = []
-        for f in [f for f in table.fields]:
-            if table[f].widget:
-                try:
-                    if table[f].requires.ktable == self.linktable:
-                        thefields.append(f)
-                except AttributeError:
-                    try:
-                        if table[f].requires[0].ktable == self.linktable:
-                            thefields.append(f)
-                    except IndexError:
-                        pass  # FIXME: problem with list:string fields
-        if len(thefields) > 1:  # FIXME: why are single fields picked up?
-            current_i = thefields.index(self.fieldset[1])
-            return current_i
-        else:
-            return None
+        # TODO: Can this index be drawn automatically from the table
+        # definition so that it doesn't have to be set manually?
+        #db = current.db
+        #table = db[self.field.table]
+        #thefields = []
+        #for f in [f for f in table.fields]:
+            #if table[f].widget:
+                #try:
+                    #if table[f].requires.ktable == self.linktable:
+                        #thefields.append(f)
+                #except AttributeError:
+                    #try:
+                        #if table[f].requires[0].ktable == self.linktable:
+                            #thefields.append(f)
+                    #except IndexError:
+                        #pass  # FIXME: problem with list:string fields
+        #if len(thefields) > 1:  # FIXME: why are single fields picked up?
+            #current_i = thefields.index(self.fieldset[1])
+            #return current_i
+        #else:
+            #return None
+        indx = self.indx if self.indx else 0
+        return indx
 
     def get_wrappername(self, fieldset):
         """
@@ -306,6 +320,8 @@ class AjaxSelect(object):
         """
         if not self.multi in [None, 'False']:
             w = MultipleOptionsWidget.widget(self.field, self.value)
+            w['_id'] = '{}_select'.format(self.wrappername)
+            w['_name'] = '{}_select'.format(self.wrappername)
 
             #place selected items at end of sortable select widget
             if self.sortable:
@@ -328,6 +344,8 @@ class AjaxSelect(object):
                         print e, type(e)
         else:
             w = OptionsWidget.widget(self.field, self.value)
+            w['_id'] = '{}_select'.format(self.wrappername)
+            w['_name'] = '{}_select'.format(self.wrappername)
 
         return w
 
@@ -345,14 +363,15 @@ class AjaxSelect(object):
         rstyle = ''
         if self.refresher in (False, 'False'):
             rstyle = 'display:none'
-        #URL to refresh widget via ajax
         comp_url = URL('plugin_ajaxselect', 'set_widget.load',
                        args=self.uargs, vars=self.uvars)
-        #create 'refresh' button
-        refresh_link = A('r', _href=comp_url, _id=refresher_id,
+        ajs = 'ajax("{url}", ["{wn}_select"], "{wn}")'.format(url=comp_url,
+                                                              wn=self.wrappername)
+        refresh_link = A('r', _onclick=ajs,
+                         _href='#', _id=refresher_id,
                          _class='refresh_trigger',
-                         cid=self.wrappername,
                          _style=rstyle)
+                         #cid=self.wrappername,
 
         return refresh_link
 
@@ -387,7 +406,7 @@ class AjaxSelect(object):
             taglist.append(listitem)
         return taglist
 
-    def make_linklist(self, value, linktable, uargs, uvars, sortable):
+    def make_linklist(self):
         """
         Build a list of selected widget options to be displayed as a
         list of 'tags' below the widget.
@@ -396,7 +415,7 @@ class AjaxSelect(object):
         form_name = '{}_editlist_form'.format(self.linktable)
         #create list to hold linked tags
         ul_classes = 'taglist editlist'
-        if sortable:
+        if self.sortable:
             ul_classes += ' sortable'
         ll = UL(_class=ul_classes)
 
@@ -407,7 +426,8 @@ class AjaxSelect(object):
                 if myrow is None:
                     continue
                 try:
-                    formatted = db[self.linktable]._format % myrow
+                    fmt = db[self.linktable]._format
+                    formatted = fmt(myrow) if callable(fmt) else fmt % myrow
                 except TypeError:
                     formatted = myrow[1]
                 trigger_id = '%s_editlist_trigger_%i' % (self.linktable, int(v))

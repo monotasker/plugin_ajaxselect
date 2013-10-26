@@ -84,11 +84,8 @@ def linked_edit_form():
     fieldname = request.args[1]
     table = db[tablename]
     field = table[fieldname]
-    requires = field.requires
-    if not isinstance(requires, list):
-        requires = [requires]
-    else:
-        requires = requires
+
+    req = field.requires if isinstance(requires, list) else [field.requires]
     linktable = requires[0].ktable
 
     this_row = request.args[2]

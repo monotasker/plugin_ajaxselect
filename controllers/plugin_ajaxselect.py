@@ -1,6 +1,6 @@
 from plugin_ajaxselect import AjaxSelect, FilteredAjaxSelect
 if 0:
-    from gluon import current, LOAD, SQLFORM, URL
+    from gluon import current, SQLFORM, URL
     request, session, response = current.request, current.session, current.response
     db = current.db
 
@@ -11,6 +11,7 @@ def set_widget():
     """
     #get variables to build widget for the proper field
     #TODO: Can I get the table from db[field]._table or something like that?
+
     tablename = request.args[0]
     fieldname = request.args[1]
     table = db[tablename]
@@ -21,19 +22,16 @@ def set_widget():
         requires = [requires]
     linktable = requires[0].ktable
 
-    wn = request.vars['wrappername']
-    value = request.vars['{}_select'.format(wn)]
+    value = request.vars[fieldname]
     print 'set_widget: value is', value
-    import pprint
-    pprint.pprint(request)
     rval = request.vars['rval'] if 'rval' in request.vars.keys() else None
-    kwargs = {'refresher': request.vars['refresher'],
-              'indx': request.vars['idx'],
+    kwargs = {'indx': request.vars['idx'],
+              'refresher': request.vars['refresher'],
               'adder': request.vars['adder'],
-              'restricted': request.vars['restricted'],
               'restrictor': request.vars['restrictor'],
               'multi': request.vars['multi'],
               'lister': request.vars['lister'],
+              'restricted': request.vars['restricted'],
               'sortable': request.vars['sortable']}
 
     if request.vars['restricted'] in (None, 'None'):
@@ -59,22 +57,22 @@ def set_widget():
     #return curval
 
 
-def set_form_wrapper():
-    """
-    Creates the LOAD helper to hold the modal form for creating a new item in
-    the linked table
-    """
-    if len(request.args) > 2:
-        form_maker = 'linked_edit_form.load'
-    else:
-        form_maker = 'linked_create_form.load'
+#def set_form_wrapper():
+    #"""
+    #Creates the LOAD helper to hold the modal form for creating a new item in
+    #the linked table
+    #"""
+    #if len(request.args) > 2:
+        #form_maker = 'linked_edit_form.load'
+    #else:
+        #form_maker = 'linked_create_form.load'
 
-    formwrapper = LOAD('plugin_ajaxselect', form_maker,
-                       args=request.args,
-                       vars=request.vars,
-                       ajax=True)
+    #formwrapper = LOAD('plugin_ajaxselect', form_maker,
+                       #args=request.args,
+                       #vars=request.vars,
+                       #ajax=True)
 
-    return {'formwrapper': formwrapper}
+    #return {'formwrapper': formwrapper}
 
 
 def linked_edit_form():
@@ -116,30 +114,31 @@ def linked_create_form():
     creates a form to insert a new entry into the linked table which populates
     the ajaxSelect widget
     """
+    try:
+        tablename = request.args[0]
+        fieldname = request.args[1]
+        wrappername = request.vars['wrappername']
+        table = db[tablename]
+        field = table[fieldname]
 
-    tablename = request.args[0]
-    fieldname = request.args[1]
-    wrappername = request.vars['wrappername']
-    table = db[tablename]
-    field = table[fieldname]
+        req = field.requires if isinstance(field.requires, list) \
+            else [field.requires]
+        linktable = req[0].ktable
 
-    requires = field.requires
-    if not isinstance(requires, list):
-        requires = [requires]
-    else:
-        requires = requires
-    linktable = requires[0].ktable
+        form = SQLFORM(db[linktable])
 
-    form = SQLFORM(db[linktable])
+        comp_url = URL('plugin_ajaxselect', 'set_widget.load',
+                    args=[tablename, fieldname],
+                    vars=request.vars)
 
-    comp_url = URL('plugin_ajaxselect', 'set_widget.load',
-                   args=[tablename, fieldname],
-                   vars=request.vars)
-
-    if form.process().accepted:
-        response.flash = 'form accepted'
-        response.js = "web2py_component('%s', '%s');" % (comp_url, wrappername)
-    else:
-        response.error = 'form was not processed'
+        if form.process().accepted:
+            response.flash = 'form accepted'
+            response.js = "web2py_component('%s', '%s');" % (comp_url, wrappername)
+        else:
+            response.error = 'form was not processed'
+    except Exception:
+        import traceback
+        print traceback.format_exc(5)
+        form = traceback.format_exc(5)
 
     return dict(form=form)

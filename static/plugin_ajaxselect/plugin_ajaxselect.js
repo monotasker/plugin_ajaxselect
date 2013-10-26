@@ -71,6 +71,7 @@ function whenSortStops($taglist){
         var theid = $(this).attr('id');
         vals.push(theid);
     });
+    console.log(vals);
     var theval = vals.join(',');
 
     //set select widget to the new value
@@ -87,49 +88,31 @@ function whenSortStops($taglist){
 }
 
 //remove an option by clicking on the remover icon in a tag
-$('a.tag_remover').on('click', function(event){
+function removetag(tag){
     //COMMON get landmarks to navigate dom =====================
-    var $p = $(this).parents('span');
+    var $p = $(tag).parents('span');
     //get $select, wrappername, $theinput, theinput, $td in info object
     var myinfo = info($p);
 
     //GENERATING NEW VALUE ======================================
     //get value of removed option
-    var $prnt = $(this).parent('li');
+    var $prnt = $(tag).parent('li');
     var val = $prnt.attr('id');
     //remove option from list of selected values
-    var startval = myinfo.$theinput.val()
-    var vlist = startval.split(',');
-    if (vlist.length > 1){
-        var i = vlist.indexOf(val);
-        vlist.splice(i, 1);
-        var theval = vlist.join();
+    var vals = myinfo.$select.val()
+    if (vals.length > 1){
+        var i = vals.indexOf(val);
+        vals.splice(i, 1);
+        myinfo.$select.val(vals);
     }
     //if the last item is being removed
     else {
-        var theval = null;
+        myinfo.$select.val(null);
     }
 
-    //COMMON VALUE UPDATING ======================================
-    //get url, its arguments, and its variables
-    var r_url = geturl(myinfo.$td);
-    //update value in url variables and update refresher link
-    var url_vars = update_vars(r_url.vars, theval);
-    update_refresher(r_url.url, url_vars, myinfo.wrappername);
-    //set the hidden input and select widget to the new value
-    myinfo.$theinput.val(theval);
-    myinfo.$select.val(theval.split(','));
-    //update back end via ajax
-    setval(r_url.appname, myinfo.theinput);
-
-    //MODIFY TAG ELEMENTS =========================================
-    //remove the actual DOM element for the tag
     $prnt.remove();
-
-    //CLEAN UP ====================================================
-    //prevent default behaviour so that the link doesn't trigger navigation
     event.preventDefault();
-});
+}
 
 //constrain and refresh appropriate select widgets if restrictor widget's
 //value is changed
@@ -215,21 +198,22 @@ function editlink(info, args, vars, newval, newtext){
     var script_s = "web2py_component('" + link_url + "', '" +
                                         info.formname + "')";
     ntag = '<li class="editlink tag" id="' + newval + '">';
-    ntag += '<a class="tag_remover">X</a>';
+    ntag += '<span class="label label-info">' + newtext + '</span>';
     ntag += '<a id="' + info.linktable + '_editlist_trigger_' + newval + '" ';
-    ntag += 'class="edit_trigger editlink tag" ';
+    ntag += 'class="edit_trigger editlink tag label label-warning icon-edit" ';
     ntag += 'href="' + link_url + '" ';
-    ntag += 'onclick="' + script_s + '; return false;">';
-    ntag += 'edit' + '</a>';
-    ntag += newtext + '</li>';
+    ntag += 'onclick="' + script_s + '; return false;"> </a>';
+    ntag += '<a class="tag_remover label label-important icon-remove"> </a>';
+    ntag += '</li>';
     return ntag
 }
 
 //utility - build and return html for basic tag
 function tag(newval, newtext){
     newtag += '<li class="tag" id="' + newval + '">';
-    newtag += '<a class="tag_remover">X</a>';
-    newtag += '<span>' + newtext + '</span>' + '</li>';
+    newtag += '<span class="label label-info">' + newtext + '</span>';
+    newtag += '<a class="tag_remover label label-important icon-remove"> </a>';
+    newtag += '</li>';
     return newtag
 }
 

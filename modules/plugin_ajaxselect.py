@@ -1,6 +1,7 @@
-from gluon import current, SPAN, A, UL, LI, OPTION, SELECT
+from gluon import current, SPAN, A, UL, LI, OPTION, SELECT, LOAD
 from gluon.html import URL
 from gluon.sqlhtml import OptionsWidget, MultipleOptionsWidget
+from plugin_widgets import MODAL
 #import copy
 #TODO: add ListWidget as another option?
 
@@ -130,10 +131,6 @@ class AjaxSelect(object):
                  rval=None, sortable=False):
                  # removed 'linktable'
 
-        self.verbose = 0
-        if self.verbose == 1:
-            print '------------------------------------------------'
-            print 'starting modules/plugin_ajaxselect __init__'
         # raw args
         self.field = field
         self.indx = indx
@@ -159,7 +156,10 @@ class AjaxSelect(object):
         self.value = self.choose_val(value)
         print 'value', value
         print 'self.value:', self.value
-        self.clean_val = ','.join(map(str, value))
+        if value and len(value) > 0:
+            self.clean_val = ','.join(map(str, value))
+        else:
+            self.clean_val = value
         # args for add and refresh urls
         self.uargs = self.fieldset
         # vars for add and refresh urls
@@ -171,8 +171,7 @@ class AjaxSelect(object):
                       'multi': self.multi,
                       'lister': self.lister,
                       'restricted': self.restricted,
-                      'sortable': self.sortable,
-                      'value': self.clean_val}
+                      'sortable': self.sortable}
 
     def widget(self):
         """
@@ -320,9 +319,6 @@ class AjaxSelect(object):
         """
         if not self.multi in [None, 'False']:
             w = MultipleOptionsWidget.widget(self.field, self.value)
-            w['_id'] = '{}_select'.format(self.wrappername)
-            w['_name'] = '{}_select'.format(self.wrappername)
-
             #place selected items at end of sortable select widget
             if self.sortable:
                 print 'val: ', self.value
@@ -344,9 +340,9 @@ class AjaxSelect(object):
                         print e, type(e)
         else:
             w = OptionsWidget.widget(self.field, self.value)
-            w['_id'] = '{}_select'.format(self.wrappername)
-            w['_name'] = '{}_select'.format(self.wrappername)
-
+        nm = self.wrappername.split('_')
+        w['_id'] = '{}_{}'.format(nm[0], nm[1])
+        w['_name'] = nm[1]
         return w
 
     def make_refresher(self, wrappername, linktable, uargs, uvars):
@@ -365,29 +361,29 @@ class AjaxSelect(object):
             rstyle = 'display:none'
         comp_url = URL('plugin_ajaxselect', 'set_widget.load',
                        args=self.uargs, vars=self.uvars)
-        ajs = 'ajax("{url}", ["{wn}_select"], "{wn}")'.format(url=comp_url,
-                                                              wn=self.wrappername)
-        refresh_link = A('r', _onclick=ajs,
+        nm = self.wrappername.split('_')
+        ajs = 'ajax("{url}", ["{n}"], "{wn}"); ' \
+              'return false;'.format(url=comp_url,
+                                     wn=self.wrappername,
+                                     n=nm[1])
+                                     #n='{}_{}'.format(nm[0], nm[1]))
+        refresh_link = A('&#8203;', _onclick=ajs,
                          _href='#', _id=refresher_id,
-                         _class='refresh_trigger',
+                         _class='refresh_trigger badge badge-info icon-refresh',
                          _style=rstyle)
-                         #cid=self.wrappername,
 
         return refresh_link
 
     def make_adder(self, wrappername, linktable):
         '''Build link for adding a new entry to the linked table'''
-
-        #create id for adder link
-        add_id = '{}_add_trigger'.format(self.linktable)
-        #URL to load form for linking table via ajax
-        add_url = URL('plugin_ajaxselect', 'set_form_wrapper.load',
-                      args=self.uargs, vars=self.uvars)
-        #create 'add new' button to open form
-        add_link = A('+', _href=add_url, _id=add_id,
-                     _class='add_trigger', cid=self.form_name)
-
-        return add_link
+        adder = MODAL(u'u\200B',
+                      'Add new {} item'.format(self.linktable),
+                      LOAD('plugin_ajaxselect', 'linked_create_form.load',
+                           args=self.uargs, vars=self.uvars, ajax=True),
+                      trigger_classes='add_trigger badge badge-success icon-plus',
+                      trigger_type='link',
+                      modal_classes='plugin_ajaxselect modal_adder')
+        return adder
 
     def make_taglist(self):
         """Build a list of selected widget options to be displayed as a
@@ -412,12 +408,8 @@ class AjaxSelect(object):
         list of 'tags' below the widget.
         """
         db = current.db
-        form_name = '{}_editlist_form'.format(self.linktable)
-        #create list to hold linked tags
-        ul_classes = 'taglist editlist'
-        if self.sortable:
-            ul_classes += ' sortable'
-        ll = UL(_class=ul_classes)
+        xclasses = ' sortable' if self.sortable else ''
+        ll = UL(_class='taglist editlist {}'.format(xclasses))
 
         #append the currently selected items to the list
         if self.value:
@@ -430,19 +422,23 @@ class AjaxSelect(object):
                     formatted = fmt(myrow) if callable(fmt) else fmt % myrow
                 except TypeError:
                     formatted = myrow[1]
-                trigger_id = '%s_editlist_trigger_%i' % (self.linktable, int(v))
                 linkargs = self.uargs[:]  # new obj so vals don't pile up
                 linkargs.append(v)
-                ln = LI(SPAN(formatted), _id=v, _class='editlink tag')
-                ln.insert(0, A('X', _class='tag_remover'))
-                ln.insert(1, A('edit',
-                               _href=URL('plugin_ajaxselect',
-                                         'set_form_wrapper.load',
-                                         args=linkargs,
-                                         vars=self.uvars),
-                               _id=trigger_id,
-                               _class='edit_trigger editlink tag',
-                               cid=form_name))
+                ln = LI(SPAN(formatted, _class='label label-info'),
+                        _id=v, _class='editlink tag')
+                myargs = self.uargs.append(v)
+                elink = MODAL(u'\200b',
+                              'Edit {} item {}'.format(self.linktable, v),
+                              LOAD('plugin_ajaxselect', 'linked_edit_form.load',
+                                  args=myargs, vars=self.uvars, ajax=True),
+                              trigger_classes='linklist_edit_trigger badge badge-warning icon-edit',
+                              trigger_type='link',
+                              modal_classes='plugin_ajaxselect modal_linklist_edit',
+                              id='{}_{}'.format(self.linktable, v))
+                ln.append(elink)
+                ln.append(A(u'u\200B',
+                            _class='tag tag_remover icon-remove '
+                                   'label label-important'))
                 ll.append(ln)
         return ll
 
@@ -481,8 +477,6 @@ class FilteredAjaxSelect(AjaxSelect):
     def create_widget(self, field, value, clean_val, multi, restricted, rval):
         """create either a single select widget or multiselect widget"""
 
-        print '----------------------------------------------'
-        print 'starting FilteredAjaxSelect.create_widget()'
         if multi:
             w = MultipleOptionsWidget.widget(field, value)
             #TODO: Create filtered multiple options widget class
@@ -523,8 +517,6 @@ class FilteredOptionsWidget(OptionsWidget):
         default = dict(value=value)
         attr = cls._attributes(field, default, **attributes)
 
-        print '----------------------------------------'
-        print 'starting FilteredOptionsWidget.widget()'
         # get raw list of options for this widget
         requires = field.requires
         if not isinstance(requires, (list, tuple)):
@@ -537,28 +529,21 @@ class FilteredOptionsWidget(OptionsWidget):
 
         # get the table referenced by this field
         linktable = requires[0].ktable
-        print 'getting options for table ', linktable
 
         # get the value of the restricting field
         table = field.table
         filter_field = table[restricted]
         if rval:
             filter_val = rval
-            print 'new restricting value is ', rval
         else:
             filter_row = db(field == value).select().first()
-            print 'restricting row is ', filter_row
             filter_val = filter_row[filter_field]
-            print 'new restricting value is ', filter_val
-        print 'filter_field', filter_field
-        print 'filter_val', filter_val
 
         # get the table referenced by the restricting field
         filter_req = filter_field.requires
         if not isinstance(filter_req, (list, tuple)):
             filter_req = [filter_req]
         filter_linktable = filter_req[0].ktable
-        print 'filter_linktable', filter_linktable
 
         #find the linktable field that references filter_linktable
         ref = 'reference %s' % filter_linktable

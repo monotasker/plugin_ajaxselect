@@ -14,4 +14,8 @@
         $('.plugin_ajaxselect select option').on('click', function(event){
             addtag(event.target);
         });
+        $('a.tag_remover').on('click', function(event){
+            removetag(event.target);
+        });
+        alert('"' + $('select').val() + '"');
 </script>

@@ -42,7 +42,6 @@ function valFromTags($taglist){
         vals.push(theid);
     });
     console.log(vals);
-    var theval = vals.join(',');
     return vals;
 }
 
@@ -51,7 +50,13 @@ function whenSortStops($taglist){
     var $p = $taglist.first().parents('span');
     var myinfo = info($p);
 
-    var vals = valFromTags($taglist);
+    //var vals = valFromTags($taglist);
+    var vals = new Array();
+    $taglist.each(function(){
+        var theid = $(this).attr('id');
+        vals.push(theid);
+    });
+    console.log(vals);
     myinfo.$select.val(vals);
 
     //reorder options in widget
@@ -59,7 +64,6 @@ function whenSortStops($taglist){
         var $opts = myinfo.$select.children('option');
         var $opt = myinfo.$select.find('option[value=' + vals[i] + ']');
         console.log(vals[i]);
-        console.log($opt.attr('id'));
         $opt.insertAfter($opts.last());
     }
 }

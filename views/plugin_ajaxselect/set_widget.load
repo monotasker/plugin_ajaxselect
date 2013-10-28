@@ -3,19 +3,18 @@
 {{pass}}
 
 <script>
-        $('ul.sortable').sortable({
+        $('#{{=wrappername}} ul.sortable').sortable({
             placeholder: 'ui-state-highlight',
             stop: function(event, ui){ 
                 var $taglist = $(event.target).find('li');
                 whenSortStops($taglist); 
             } 
         });
-        $('ul.sortable').disableSelection();
-        $('.plugin_ajaxselect select option').on('click', function(event){
+        $('#{{=wrappername}} ul.sortable').disableSelection();
+        $('#{{=wrappername}}.plugin_ajaxselect select option').on('click', function(event){
             addtag(event.target);
         });
-        $('a.tag_remover').on('click', function(event){
+        $('#{{=wrappername}} a.tag_remover').on('click', function(event){
             removetag(event.target);
         });
-        alert('"' + $('select').val() + '"');
 </script>

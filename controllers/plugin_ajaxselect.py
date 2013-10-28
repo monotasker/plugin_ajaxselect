@@ -10,22 +10,19 @@ def set_widget():
     Return a replacement AjaxSelect or FilteredAjaxSelect widget via ajax.
     """
     #get variables to build widget for the proper field
-    #TODO: Can I get the table from db[field]._table or something like that?
 
     tablename = request.args[0]
     fieldname = request.args[1]
     table = db[tablename]
     field = table[fieldname]
-    # FIXME: Since I'm getting link table in widget code, I don't need it here.
     requires = field.requires
     if not isinstance(requires, list):
         requires = [requires]
     linktable = requires[0].ktable
 
     value = request.vars[fieldname]
-    print 'set_widget: value is', value
     rval = request.vars['rval'] if 'rval' in request.vars.keys() else None
-    kwargs = {'indx': request.vars['idx'],
+    kwargs = {'indx': request.vars['indx'],
               'refresher': request.vars['refresher'],
               'adder': request.vars['adder'],
               'restrictor': request.vars['restrictor'],
@@ -33,46 +30,16 @@ def set_widget():
               'lister': request.vars['lister'],
               'restricted': request.vars['restricted'],
               'sortable': request.vars['sortable']}
-
+    #print 'controller: kwargs is ', kwargs
     if request.vars['restricted'] in (None, 'None'):
-        w = AjaxSelect(field, value, **kwargs).widget()
+        w = AjaxSelect(field, value, **kwargs).widget_contents()
     else:
-        w = FilteredAjaxSelect(field, value, rval=rval, **kwargs).widget()
+        w = FilteredAjaxSelect(field, value, rval=rval, **kwargs).widget_contents()
 
-    return dict(wrapper=w, linktable=linktable, tablename=tablename)
-
-
-#def setval():
-    #"""Called when user changes value of AjaxSelect widget. Stores the current
-    #widget state in a session object to be used if the widget is refreshed
-    #before the form is processed."""
-
-    #theinput = request.args[0]
-    #wrappername = theinput.replace('_input', '')
-    #curval = listcheck(request.vars[theinput])[0]
-    #curval = str(curval).split(',')
-    #curvalInts = [int(i) for i in curval if i]  # condition for None val
-    #session[wrappername] = curvalInts
-
-    #return curval
-
-
-#def set_form_wrapper():
-    #"""
-    #Creates the LOAD helper to hold the modal form for creating a new item in
-    #the linked table
-    #"""
-    #if len(request.args) > 2:
-        #form_maker = 'linked_edit_form.load'
-    #else:
-        #form_maker = 'linked_create_form.load'
-
-    #formwrapper = LOAD('plugin_ajaxselect', form_maker,
-                       #args=request.args,
-                       #vars=request.vars,
-                       #ajax=True)
-
-    #return {'formwrapper': formwrapper}
+    return dict(wrapper=w,
+                linktable=linktable,
+                tablename=tablename,
+                wrappername=request.vars['wrappername'])
 
 
 def linked_edit_form():
@@ -80,28 +47,39 @@ def linked_edit_form():
     creates a form to edit, update, or delete an intry in the linked table which
     populates the AjaxSelect widget.
     """
-    tablename = request.args[0]
-    fieldname = request.args[1]
-    table = db[tablename]
-    field = table[fieldname]
+    try:
+        tablename = request.args[0]
+        fieldname = request.args[1]
+        table = db[tablename]
+        field = table[fieldname]
 
-    req = field.requires if isinstance(requires, list) else [field.requires]
-    linktable = requires[0].ktable
+        req = field.requires if isinstance(field.requires, list) else [field.requires]
+        linktable = req[0].ktable
 
-    this_row = request.args[2]
-    wrappername = request.vars['wrappername']
+        this_row = request.args[2]
+        wrappername = request.vars['wrappername']
+        formname = '{}/edit'.format(tablename)
 
-    form = SQLFORM(db[linktable], this_row)
+        form = SQLFORM(db[linktable], this_row)
 
-    comp_url = URL('plugin_ajaxselect', 'set_widget.load',
-                   args=[tablename, fieldname],
-                   vars=request.vars)
+        comp_url = URL('plugin_ajaxselect', 'set_widget.load',
+                       args=[tablename, fieldname],
+                       vars=request.vars)
 
-    if form.process().accepted:
-        response.flash = 'form accepted'
-        response.js = "web2py_component('%s', '%s');" % (comp_url, wrappername)
-    else:
-        response.error = 'form was not processed'
+        if form.process(formname=formname).accepted:
+            response.flash = 'form accepted'
+            response.js = "web2py_component('%s', '%s');" % (comp_url, wrappername)
+        if form.errors:
+            response.error = 'form was not processed'
+            print 'error processing linked_create_form'
+            print form.errors
+        else:
+            pass
+    except Exception:
+        import traceback
+        print 'error in whole of linked_edit_form'
+        print traceback.format_exc(5)
+        form = traceback.format_exc(5)
 
     return {'form': form}
 
@@ -122,17 +100,23 @@ def linked_create_form():
             else [field.requires]
         linktable = req[0].ktable
 
+        formname = '{}/create'.format(tablename)
         form = SQLFORM(db[linktable])
 
         comp_url = URL('plugin_ajaxselect', 'set_widget.load',
                     args=[tablename, fieldname],
                     vars=request.vars)
 
-        if form.process().accepted:
+        if form.process(formname=formname).accepted:
             response.flash = 'form accepted'
             response.js = "web2py_component('%s', '%s');" % (comp_url, wrappername)
-        else:
+        if form.errors:
             response.error = 'form was not processed'
+            print 'error processing linked_create_form'
+            print form.errors
+        else:
+            pass
+
     except Exception:
         import traceback
         print traceback.format_exc(5)

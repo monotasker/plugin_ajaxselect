@@ -1,31 +1,5 @@
 // Javascript for the AjaxSelect and related widgets
 // part of the plugin_ajaxselect plugin for web2py
-//
-//open modal dialog (using jquery-ui dialog) for an ajax form
-function open_dialog($trigger, action){
-
-    //get linktable from trigger id
-    var the_id = $trigger.attr('id');
-    var parts = the_id.split('_');
-    var linktable = parts[0];
-    // make title for modal form from action
-    if(action == 'editlist'){
-        formtitle = 'Edit ';
-    } else {
-        formtitle = 'Add new item ';
-    }
-
-    // build name for dialog
-    var dlname = linktable + '_' + action + '_form';
-    // If a dialog with that name exists, reuse it. Otherwise, create a new one
-    if($('#' + dlname).length){
-        $('#' + dlname).html('').dialog('open');
-    } else {
-        var newd = $('<div id="' + dlname + '" class="ajaxselect_dialog"></div>');
-    }
-    return false
-}
-
 
 //TODO: Bind a separate function to the select if multi=False or no taglist
 //when select value is changed, update
@@ -36,45 +10,48 @@ function addtag(opt){
     var myinfo = info($p);
     var r_url = geturl(myinfo.$td);
 
-    //set the clicked option to selected
-    $(opt).attr('selected', 'selected');
-    //add tag for this option to taglist
-    var $taglist = myinfo.$td.find('.taglist');
-    var mylinkinfo = linkinfo(r_url.url, r_url.vars);
+    //add tag for this option to taglist =======================
+    var $taglist = $p.find('.taglist');
+    var linfo = linkinfo(r_url.url, r_url.vars);
     var newval = $(opt).attr('value');
     var newtext = $(opt).text();
     if($p.hasClass('lister_editlinks')){
-        var newtag = editlink(mylinkinfo, r_url.args, r_url.vars,
-                                    newval, newtext);
+        var newtag = editlink(linfo, r_url.args, r_url.vars, newval, newtext);
         $taglist.append(newtag);
     }
     else if($p.hasClass('lister_simple')){
         var newtag = tag(newval, newtext);
         $taglist.append(newtag);
     }
+    // FIXME: Shouldn't have to re-bind this here
+    $taglist.find('a.tag_remover').on('click', function(event){
+        removetag(event.target);
+    });
     //make sure newly added tag is added to sortable binding
-    // FIXME: is this binding added initially?
     $('ul.sortable').sortable('refresh');
+    //update select value
+    vals = valFromTags($taglist);
+    myinfo.$select.val(vals);
     event.preventDefault();
 }
 
-//TODO: move binding of sortable here from set_widget.load and
-//listandedit/edit.load using plugin to provide 'create' event.
-function whenSortStops($taglist){
-    //COMMON get landmarks to navigate dom =====================
-    var $p = $taglist.first().parents('span');
-    var myinfo = info($p);
-
-    //GENERATING NEW VALUE ======================================
+function valFromTags($taglist){
     var vals = new Array();
-    $taglist.each(function(){
+    $taglist.find('li').each(function(){
         var theid = $(this).attr('id');
         vals.push(theid);
     });
     console.log(vals);
     var theval = vals.join(',');
+    return vals;
+}
 
-    //set select widget to the new value
+function whenSortStops($taglist){
+    //COMMON get landmarks to navigate dom =====================
+    var $p = $taglist.first().parents('span');
+    var myinfo = info($p);
+
+    var vals = valFromTags($taglist);
     myinfo.$select.val(vals);
 
     //reorder options in widget
@@ -93,24 +70,27 @@ function removetag(tag){
     var $p = $(tag).parents('span');
     //get $select, wrappername, $theinput, theinput, $td in info object
     var myinfo = info($p);
-
-    //GENERATING NEW VALUE ======================================
-    //get value of removed option
     var $prnt = $(tag).parent('li');
+
+    //get value of removed option
     var val = $prnt.attr('id');
     //remove option from list of selected values
-    var vals = myinfo.$select.val()
-    if (vals.length > 1){
-        var i = vals.indexOf(val);
-        vals.splice(i, 1);
-        myinfo.$select.val(vals);
-    }
-    //if the last item is being removed
-    else {
-        myinfo.$select.val(null);
-    }
-
     $prnt.remove();
+
+    var $taglist = $p.find('.taglist');
+    var vals = valFromTags($taglist);
+    myinfo.$select.val(vals);
+
+    //var vals = myinfo.$select.val()
+    //if (vals.length > 0){
+        //var i = vals.indexOf(val);
+        //vals.splice(i, 1);
+    //}
+    ////if the last item is being removed
+    //else {
+        //myinfo.$select.val(null);
+    //}
+
     event.preventDefault();
 }
 
@@ -173,7 +153,7 @@ function geturl($td){
     var url_frag = r_url.match(/set_widget.load(.*)/);
     var url_args_vars = url_frag[1].split('?');
     var url_args = url_args_vars[0];
-    var url_vars_raw = url_args_vars[1];
+    var url_vars_raw = url_args_vars[1].split('"')[0];
     var appname = r_url.split('/')[1];
     console.log(url_vars_raw);
     return {'url':r_url, 'args':url_args,
@@ -210,10 +190,11 @@ function editlink(info, args, vars, newval, newtext){
 
 //utility - build and return html for basic tag
 function tag(newval, newtext){
-    newtag += '<li class="tag" id="' + newval + '">';
+    newtag = '<li class="tag" id="' + newval + '">';
     newtag += '<span class="label label-info">' + newtext + '</span>';
-    newtag += '<a class="tag_remover label label-important icon-remove"> </a>';
+    newtag += '<a class="tag tag_remover label label-important icon-remove">&#x200b;</a>';
     newtag += '</li>';
+
     return newtag
 }
 

@@ -160,8 +160,8 @@ class AjaxSelect(object):
             self.clean_val = value
         # args for add and refresh urls
         self.uargs = self.fieldset
-        print 'init: self.uargs is', self.uargs
-        print 'init: value is', value
+        # print 'init: self.uargs is', self.uargs
+        # print 'init: value is', value
         # vars for add and refresh urls
         self.uvars = {'wrappername': self.wrappername,
                       'refresher': refresher,
@@ -186,7 +186,7 @@ class AjaxSelect(object):
         wrapper.append(LOAD('plugin_ajaxselect', 'set_widget.load',
                             args=self.uargs, vars=uvars,
                             target=self.wrappername))
-        print 'widget: uargs is', self.uargs
+        # print 'widget: uargs is', self.uargs
         return wrapper
 
     def widget_contents(self):

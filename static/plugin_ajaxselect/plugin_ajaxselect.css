@@ -9392,6 +9392,9 @@ a:link {
   float: left;
   width: 90%;
 }
+div.w2p_fw .plugin_ajaxselect select {
+  display: block;
+}
 .plugin_ajaxselect .refresh_trigger,
 .plugin_ajaxselect .add_trigger {
   float: left;

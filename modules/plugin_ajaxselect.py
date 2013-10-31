@@ -371,9 +371,8 @@ class AjaxSelect(object):
             else:
                 w = OptionsWidget.widget(self.field, self.value)
 
-        nm = self.wrappername.split('_')
-        w['_id'] = '{}_{}'.format(nm[0], nm[1])
-        w['_name'] = nm[1]
+        w['_id'] = '{}_{}'.format(self.fieldset[0], self.fieldset[1])
+        w['_name'] = self.fieldset[1]
         return w
 
     def make_refresher(self, wrappername, linktable, uargs, uvars):
@@ -392,12 +391,10 @@ class AjaxSelect(object):
             rstyle = 'display:none'
         comp_url = URL('plugin_ajaxselect', 'set_widget.load',
                        args=self.uargs, vars=self.uvars)
-        nm = self.wrappername.split('_')
         ajs = 'ajax("{url}", ["{n}"], "{wn}"); ' \
               'return false;'.format(url=comp_url,
                                      wn=self.wrappername,
-                                     n=nm[1])
-                                     #n='{}_{}'.format(nm[0], nm[1]))
+                                     n=self.fieldset[1])
         refresh_link = A(u'\u200B', _onclick=ajs,
                          _href='#', _id=refresher_id,
                          _class='refresh_trigger badge badge-info icon-refresh',

@@ -121,6 +121,11 @@ class AjaxSelect(object):
     the form's table should be given a different 'indx' value to differentiate
     the widget from others. Without this differentiating value the widgets will
     interfere with one another when any on of them is refreshed.
+
+    :param orderby (str; defaults to id): Takes the name of a field in the
+    referenced table to be used for ordering the entries in the widget. By
+    default the order is descending. If the field name is prefixed by ~ the
+    order will be changed to descending.
     """
     #TODO: allow for restrictor argument to take list and filter multiple
     #other fields
@@ -129,7 +134,8 @@ class AjaxSelect(object):
                  refresher=None, adder=True,
                  restricted=None, restrictor=None,
                  multi=True, lister=False,
-                 rval=None, sortable=False):
+                 rval=None, sortable=False,
+                 orderby=None):
 
         # raw args
         self.field = field
@@ -143,6 +149,8 @@ class AjaxSelect(object):
         self.lister = lister
         self.rval = rval
         self.sortable = sortable
+        self.orderby = orderby
+        print 'at init orderby is', self.orderby
 
         # find table referenced by widget
         self.fieldset = str(field).split('.')
@@ -160,8 +168,8 @@ class AjaxSelect(object):
             self.clean_val = value
         # args for add and refresh urls
         self.uargs = self.fieldset
-        print 'init: self.uargs is', self.uargs
-        print 'init: value is', value
+        # print 'init: self.uargs is', self.uargs
+        # print 'init: value is', value
         # vars for add and refresh urls
         self.uvars = {'wrappername': self.wrappername,
                       'refresher': refresher,
@@ -170,7 +178,8 @@ class AjaxSelect(object):
                       'multi': self.multi,
                       'lister': self.lister,
                       'restricted': self.restricted,
-                      'sortable': self.sortable}
+                      'sortable': self.sortable,
+                      'orderby': self.orderby}
 
     def widget(self):
         """
@@ -186,7 +195,7 @@ class AjaxSelect(object):
         wrapper.append(LOAD('plugin_ajaxselect', 'set_widget.load',
                             args=self.uargs, vars=uvars,
                             target=self.wrappername))
-        print 'widget: uargs is', self.uargs
+        # print 'widget: uargs is', self.uargs
         return wrapper
 
     def widget_contents(self):
@@ -330,7 +339,12 @@ class AjaxSelect(object):
         create either a single select widget or multiselect widget
         """
         if not self.multi in [None, 'False']:
-            w = MultipleOptionsWidget.widget(self.field, self.value)
+            if self.orderby:
+                w = FilteredOptionsWidget.widget(self.field, self.value,
+                                                 orderby=self.orderby,
+                                                 multiple='multiple')
+            else:
+                w = MultipleOptionsWidget.widget(self.field, self.value)
             #place selected items at end of sortable select widget
             if self.sortable:
                 print 'val: ', self.value
@@ -351,10 +365,14 @@ class AjaxSelect(object):
                 except Exception, e:
                         print e, type(e)
         else:
-            w = OptionsWidget.widget(self.field, self.value)
-        nm = self.wrappername.split('_')
-        w['_id'] = '{}_{}'.format(nm[0], nm[1])
-        w['_name'] = nm[1]
+            if self.orderby:
+                w = FilteredOptionsWidget.widget(self.field, self.value,
+                                                 orderby=self.orderby)
+            else:
+                w = OptionsWidget.widget(self.field, self.value)
+
+        w['_id'] = '{}_{}'.format(self.fieldset[0], self.fieldset[1])
+        w['_name'] = self.fieldset[1]
         return w
 
     def make_refresher(self, wrappername, linktable, uargs, uvars):
@@ -373,12 +391,10 @@ class AjaxSelect(object):
             rstyle = 'display:none'
         comp_url = URL('plugin_ajaxselect', 'set_widget.load',
                        args=self.uargs, vars=self.uvars)
-        nm = self.wrappername.split('_')
         ajs = 'ajax("{url}", ["{n}"], "{wn}"); ' \
               'return false;'.format(url=comp_url,
                                      wn=self.wrappername,
-                                     n=nm[1])
-                                     #n='{}_{}'.format(nm[0], nm[1]))
+                                     n=self.fieldset[1])
         refresh_link = A(u'\u200B', _onclick=ajs,
                          _href='#', _id=refresher_id,
                          _class='refresh_trigger badge badge-info icon-refresh',
@@ -525,7 +541,8 @@ class FilteredOptionsWidget(OptionsWidget):
     """
 
     @classmethod
-    def widget(cls, field, value, restricted, rval, **attributes):
+    def widget(cls, field, value, restricted=None, rval=None,
+               orderby=None, multiple=False, **attributes):
         """
         generates a SELECT tag, including OPTIONs (only 1 option allowed)
 
@@ -539,7 +556,10 @@ class FilteredOptionsWidget(OptionsWidget):
         """
         db = current.db
 
-        default = dict(value=value)
+        default = {'value': value}
+        attributes.update({'_restricted': restricted,
+                           '_orderby': orderby,
+                           '_multiple': multiple})
         attr = cls._attributes(field, default, **attributes)
 
         # get raw list of options for this widget
@@ -556,30 +576,39 @@ class FilteredOptionsWidget(OptionsWidget):
         linktable = requires[0].ktable
 
         # get the value of the restricting field
-        table = field.table
-        filter_field = table[restricted]
-        if rval:
-            filter_val = rval
+        if restricted:
+            table = field.table
+            filter_field = table[restricted]
+            if rval:
+                filter_val = rval
+            else:
+                filter_row = db(field == value).select().first()
+                filter_val = filter_row[filter_field]
+
+            # get the table referenced by the restricting field
+            filter_req = filter_field.requires
+            if not isinstance(filter_req, (list, tuple)):
+                filter_req = [filter_req]
+            filter_linktable = filter_req[0].ktable
+
+            #find the linktable field that references filter_linktable
+            reffields = db[linktable].fields
+            ref = 'reference {}'.format(filter_linktable)
+            cf = [f for f in reffields if db[linktable][f].type == ref][0]
+
+            # filter and order raw list of options
+            myorder = orderby if (orderby and orderby.replace('~', '')
+                                  in reffields) else 'id'
+            rows = db(db[linktable][cf] == filter_val).select(orderby=myorder)
         else:
-            filter_row = db(field == value).select().first()
-            filter_val = filter_row[filter_field]
+            reffields = db[linktable].fields
+            myorder = orderby if (orderby and orderby.replace('~', '')
+                                  in reffields) else 'id'
+            rows = db(db[linktable].id > 0).select(orderby=myorder)
 
-        # get the table referenced by the restricting field
-        filter_req = filter_field.requires
-        if not isinstance(filter_req, (list, tuple)):
-            filter_req = [filter_req]
-        filter_linktable = filter_req[0].ktable
-
-        #find the linktable field that references filter_linktable
-        ref = 'reference %s' % filter_linktable
-        cf = [f for f in db[linktable].fields
-              if db[linktable][f].type == ref][0]
-
-        # filter raw list of options
-        f_options = [o for o in options if db((db[linktable].id == o[0])
-                                & (db[linktable][cf] == filter_val)).select()]
-
-        # build widget with filtered options
+        # build widget with filtered and ordered options
+        f_options = [o for r in rows for o in options if r.id == int(o[0])]
         opts = [OPTION(v, _value=k) for (k, v) in f_options]
+        widget = SELECT(*opts, **attr)
 
-        return SELECT(*opts, **attr)
+        return widget

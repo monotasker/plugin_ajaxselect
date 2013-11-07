@@ -29,7 +29,8 @@ def set_widget():
               'multi': request.vars['multi'],
               'lister': request.vars['lister'],
               'restricted': request.vars['restricted'],
-              'sortable': request.vars['sortable']}
+              'sortable': request.vars['sortable'],
+              'orderby': request.vars['orderby']}
     #print 'controller: kwargs is ', kwargs
     if request.vars['restricted'] in (None, 'None'):
         w = AjaxSelect(field, value, **kwargs).widget_contents()

@@ -7621,8 +7621,8 @@ a.badge:focus {
  * -------------------------- */
 @font-face {
   font-family: 'FontAwesome';
-  src: url('../plugin_framework/fonts/fontawesome-webfont.eot?v=3.2.1');
-  src: url('../plugin_framework/fonts/fontawesome-webfont.eot?#iefix&v=3.2.1') format('embedded-opentype'), url('../plugin_framework/fonts/fontawesome-webfont.woff?v=3.2.1') format('woff'), url('../plugin_framework/fonts/fontawesome-webfont.ttf?v=3.2.1') format('truetype'), url('../plugin_framework/fonts/fontawesome-webfont.svg#fontawesomeregular?v=3.2.1') format('svg');
+  src: url('/paideia/static/plugin_framework/fonts/fontawesome-webfont.eot?v=3.2.1');
+  src: url('/paideia/static/plugin_framework/fonts/fontawesome-webfont.eot?#iefix&v=3.2.1') format('embedded-opentype'), url('/paideia/static/plugin_framework/fonts/fontawesome-webfont.woff?v=3.2.1') format('woff'), url('/paideia/static/plugin_framework/fonts/fontawesome-webfont.ttf?v=3.2.1') format('truetype'), url('/paideia/static/plugin_framework/fonts/fontawesome-webfont.svg#fontawesomeregular?v=3.2.1') format('svg');
   font-weight: normal;
   font-style: normal;
 }

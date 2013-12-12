@@ -1,4 +1,5 @@
 from plugin_ajaxselect import AjaxSelect, FilteredAjaxSelect
+from pprint import pprint
 if 0:
     from gluon import current, SQLFORM, URL
     request, session, response = current.request, current.session, current.response
@@ -90,6 +91,7 @@ def linked_create_form():
     creates a form to insert a new entry into the linked table which populates
     the ajaxSelect widget
     """
+    print 'Starting linked_create_form'
     try:
         tablename = request.args[0]
         fieldname = request.args[1]
@@ -101,7 +103,7 @@ def linked_create_form():
             else [field.requires]
         linktable = req[0].ktable
 
-        formname = '{}/create'.format(tablename)
+        formname = '{}_create'.format(wrappername)
         form = SQLFORM(db[linktable])
 
         comp_url = URL('plugin_ajaxselect', 'set_widget.load',
@@ -110,12 +112,19 @@ def linked_create_form():
 
         if form.process(formname=formname).accepted:
             response.flash = 'form accepted'
-            response.js = "web2py_component('%s', '%s');" % (comp_url, wrappername)
+            response.js = "window.setTimeout(" \
+                          "web2py_component('{}', '{}'), " \
+                          "500);".format(comp_url, wrappername)
+
+            print 'linked create form accepted'
+            print 'linked create form vars:'
+            pprint(form.vars)
         if form.errors:
             response.error = 'form was not processed'
             print 'error processing linked_create_form'
             print form.errors
         else:
+            print 'form not processed but no errors'
             pass
 
     except Exception:

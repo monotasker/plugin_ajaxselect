@@ -3,18 +3,24 @@
 {{pass}}
 
 <script>
-        $('#{{=wrappername}} ul.sortable').sortable({
-            placeholder: 'ui-state-highlight',
-            stop: function(event, ui){ 
-                var $taglist = $(event.target).find('li');
-                whenSortStops($taglist); 
-            } 
-        });
-        $('#{{=wrappername}} ul.sortable').disableSelection();
-        $('#{{=wrappername}}.plugin_ajaxselect select option').on('click', function(event){
-            addtag(event.target);
-        });
-        $('#{{=wrappername}} a.tag_remover').on('click', function(event){
-            removetag(event.target);
-        });
+    $('#{{=wrappername}} ul.sortable').sortable({
+        placeholder: 'ui-state-highlight',
+        stop: function(event, ui){ 
+            var $taglist = $(event.target).find('li');
+            whenSortStops($taglist); 
+        } 
+    });
+    $('#{{=wrappername}} ul.sortable').disableSelection();
+    $('#{{=wrappername}}.plugin_ajaxselect select option').on('click', function(event){
+        addtag(event.target);
+    });
+    $('#{{=wrappername}} a.tag_remover').on('click', function(event){
+        removetag(event.target);
+    });
+
+    //window.setTimeout(function(){
+    //    $('#{{=wrappername}} .modal.modal_adder').appendTo('#page');
+    //}, 10000);
+
+
 </script>

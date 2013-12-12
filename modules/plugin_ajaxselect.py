@@ -1,6 +1,6 @@
 from gluon import current, SPAN, A, UL, LI, OPTION, SELECT, LOAD, CAT
 from gluon.html import URL
-from gluon.sqlhtml import OptionsWidget, MultipleOptionsWidget
+from gluon.sqlhtml import OptionsWidget, MultipleOptionsWidget, SQLFORM
 from plugin_widgets import MODAL
 import traceback
 #import copy
@@ -150,7 +150,6 @@ class AjaxSelect(object):
         self.rval = rval
         self.sortable = sortable
         self.orderby = orderby
-        print 'at init orderby is', self.orderby
 
         # find table referenced by widget
         self.fieldset = str(field).split('.')
@@ -168,8 +167,6 @@ class AjaxSelect(object):
             self.clean_val = value
         # args for add and refresh urls
         self.uargs = self.fieldset
-        # print 'init: self.uargs is', self.uargs
-        # print 'init: value is', value
         # vars for add and refresh urls
         self.uvars = {'wrappername': self.wrappername,
                       'refresher': refresher,
@@ -195,7 +192,6 @@ class AjaxSelect(object):
         wrapper.append(LOAD('plugin_ajaxselect', 'set_widget.load',
                             args=self.uargs, vars=uvars,
                             target=self.wrappername))
-        # print 'widget: uargs is', self.uargs
         return wrapper
 
     def widget_contents(self):
@@ -384,7 +380,7 @@ class AjaxSelect(object):
         instantiated with the 'refresher' parameter set to False, then the
         link is hidden via CSS.
         '''
-        refresher_id = '%s_refresh_trigger' % linktable
+        refresher_id = '{}_refresh_trigger'.format(linktable)
         #prepare to hide 'refresh' button via CSS if necessary
         rstyle = ''
         if self.refresher in (False, 'False'):
@@ -404,15 +400,55 @@ class AjaxSelect(object):
 
     def make_adder(self, wrappername, linktable):
         '''Build link for adding a new entry to the linked table'''
-        #load = LOAD('plugin_ajaxselect', 'linked_create_form.load',
-                    #args=self.uargs, vars=self.uvars, ajax=True)
-        adder = MODAL(u'\u200B',
-                      'Add new {} item'.format(self.linktable),
-                      'None',
-                      trigger_classes='add_trigger badge badge-success icon-plus',
-                      trigger_type='link',
-                      modal_classes='plugin_ajaxselect modal_adder')
-        return adder
+        try:
+            load = LOAD('plugin_ajaxselect', 'linked_create_form.load',
+                        args=self.uargs, vars=self.uvars, ajax=True)
+            adder = MODAL(u'\u200B',
+                        'Add new {} item'.format(self.linktable),
+                        load,
+                        trigger_classes='add_trigger badge badge-success icon-plus',
+                        trigger_type='link',
+                        modal_classes='plugin_ajaxselect modal_adder',
+                        id='{}_adder'.format(wrappername))
+            return adder
+        except Exception:
+            print 'error in make_adder'
+            print traceback.format_exc(5)
+
+    def make_add_form(self):
+        """
+        Return a form to insert a new record for the table linked to this field.
+        """
+        response = current.response
+        db = current.db
+        try:
+            tablename = self.fieldset[0]
+            wrappername = self.wrappername
+            linktable = self.linktable
+
+            formname = '{}/create'.format(tablename)
+            form = SQLFORM(db[linktable])
+
+            if form.process(formname=formname).accepted:
+                response.flash = 'form accepted'
+                comp_url = URL('plugin_ajaxselect', 'set_widget.load',
+                               args=self.uargs,
+                               vars=self.uvars)
+                # refreshes parent widget on submit
+                response.js = "web2py_component('{}', '{}');".format(comp_url,
+                                                                     wrappername)
+            if form.errors:
+                response.error = 'form was not processed'
+                print 'error processing linked_create_form'
+                print form.errors
+            else:
+                pass
+
+        except Exception:
+            print traceback.format_exc(5)
+            form = traceback.format_exc(5)
+
+        return form
 
     def make_taglist(self):
         """Build a list of selected widget options to be displayed as a

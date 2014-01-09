@@ -34,11 +34,12 @@ def set_widget():
               'orderby': request.vars['orderby']}
     #print 'controller: kwargs is ', kwargs
     if request.vars['restricted'] in (None, 'None'):
-        w = AjaxSelect(field, value, **kwargs).widget_contents()
+        w, modal = AjaxSelect(field, value, **kwargs).widget_contents()
     else:
-        w = FilteredAjaxSelect(field, value, rval=rval, **kwargs).widget_contents()
+        w, modal = FilteredAjaxSelect(field, value, rval=rval, **kwargs).widget_contents()
 
     return dict(wrapper=w,
+                modal=modal,
                 linktable=linktable,
                 tablename=tablename,
                 wrappername=request.vars['wrappername'])
@@ -121,6 +122,7 @@ def linked_create_form():
             pprint(form.vars)
         if form.errors:
             response.error = 'form was not processed'
+            response.flash = 'form was not processed'
             print 'error processing linked_create_form'
             print form.errors
         else:

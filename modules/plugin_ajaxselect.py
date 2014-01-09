@@ -1,6 +1,6 @@
 from gluon import current, SPAN, A, UL, LI, OPTION, SELECT, LOAD, CAT
 from gluon.html import URL
-from gluon.sqlhtml import OptionsWidget, MultipleOptionsWidget, SQLFORM
+from gluon.sqlhtml import OptionsWidget, MultipleOptionsWidget
 from plugin_widgets import MODAL
 import traceback
 #import copy
@@ -208,7 +208,7 @@ class AjaxSelect(object):
         widget = self.create_widget()
         refreshlink = self.make_refresher(self.wrappername, self.linktable,
                                           self.uargs, self.uvars)
-        adder = self.make_adder(self.wrappername, self.linktable)
+        adder, modal = self.make_adder(self.wrappername, self.linktable)
         wrapper.components.extend([widget, refreshlink, adder])
 
         # create and add tags/links if multiple select widget
@@ -220,7 +220,7 @@ class AjaxSelect(object):
             taglist = ''
         wrapper.append(taglist)
 
-        return wrapper
+        return wrapper, modal
 
     def get_widget_index(self):
         """
@@ -401,54 +401,22 @@ class AjaxSelect(object):
     def make_adder(self, wrappername, linktable):
         '''Build link for adding a new entry to the linked table'''
         try:
-            load = LOAD('plugin_ajaxselect', 'linked_create_form.load',
-                        args=self.uargs, vars=self.uvars, ajax=True)
+            attrs = {'_href': URL('plugin_ajaxselect', 'linked_create_form.load',
+                                  args=self.uargs, vars=self.uvars)}
             adder = MODAL(u'\u200B',
-                        'Add new {} item'.format(self.linktable),
-                        load,
-                        trigger_classes='add_trigger badge badge-success icon-plus',
-                        trigger_type='link',
-                        modal_classes='plugin_ajaxselect modal_adder',
-                        id='{}_adder'.format(wrappername))
-            return adder
+                          'Add new {} item'.format(self.linktable),
+                          'Content',
+                          trigger_classes='add_trigger badge badge-success icon-plus',
+                          trigger_type='link',
+                          modal_classes='plugin_ajaxselect modal_adder',
+                          attributes=attrs,
+                          id='{}_adder'.format(wrappername))
+            add_trigger = adder[0]
+            add_modal = adder[1]
+            return add_trigger, add_modal
         except Exception:
             print 'error in make_adder'
             print traceback.format_exc(5)
-
-    def make_add_form(self):
-        """
-        Return a form to insert a new record for the table linked to this field.
-        """
-        response = current.response
-        db = current.db
-        try:
-            tablename = self.fieldset[0]
-            wrappername = self.wrappername
-            linktable = self.linktable
-
-            formname = '{}/create'.format(tablename)
-            form = SQLFORM(db[linktable])
-
-            if form.process(formname=formname).accepted:
-                response.flash = 'form accepted'
-                comp_url = URL('plugin_ajaxselect', 'set_widget.load',
-                               args=self.uargs,
-                               vars=self.uvars)
-                # refreshes parent widget on submit
-                response.js = "web2py_component('{}', '{}');".format(comp_url,
-                                                                     wrappername)
-            if form.errors:
-                response.error = 'form was not processed'
-                print 'error processing linked_create_form'
-                print form.errors
-            else:
-                pass
-
-        except Exception:
-            print traceback.format_exc(5)
-            form = traceback.format_exc(5)
-
-        return form
 
     def make_taglist(self):
         """Build a list of selected widget options to be displayed as a

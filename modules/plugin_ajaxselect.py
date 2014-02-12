@@ -153,7 +153,7 @@ class AjaxSelect(object):
 
         # find table referenced by widget
         self.fieldset = str(field).split('.')
-        self.linktable = self.get_linktable(field)
+        self.linktable = get_linktable(field)
 
         # processed variables
         self.wrappername = self.get_wrappername(self.fieldset)
@@ -266,44 +266,6 @@ class AjaxSelect(object):
         name = '{}_{}_loader{}'.format(fieldset[0], fieldset[1], str(windex))
         return name
 
-    def get_linktable(self, field):
-        """
-        Return name of table for this widget from its 'requires' attribute.
-        """
-        if not isinstance(field.requires, list):
-            requires = [field.requires]
-        else:
-            requires = field.requires
-        linktable = requires[0].ktable
-
-        return linktable
-
-    def sanitize_int_list(self, val):
-        """
-        Return val as a list of ints and not as plain int or str
-        """
-        def sanitize_internal(val):
-            if not isinstance(val, int):
-                try:
-                    val = int(val)
-                except (ValueError, TypeError):
-                    val = None  # empty string or alphabetical
-            return val
-
-        if val and isinstance(val, list):
-            val = [sanitize_internal(v) for v in val]
-            val = [v for v in val if v]
-        elif isinstance(val, str):
-            val = val.split('|')
-            val = [sanitize_internal(v) for v in val]
-            val = [v for v in val if v]
-            val = val if len(val) else None
-        else:
-            val = sanitize_internal(val)
-            val = [val] if val else None
-
-        return val
-
     def choose_val(self, value):
         """
         Use value stored in session if changes to widget haven't been sent to
@@ -323,7 +285,7 @@ class AjaxSelect(object):
         else:
             pass
 
-        return self.sanitize_int_list(val)
+        return sanitize_int_list(val)
 
     def restrict(self, restricted):
         """Isolate creation of this value so that it can be overridden in
@@ -577,7 +539,7 @@ class FilteredOptionsWidget(OptionsWidget):
                 print 'widget cannot get options of %s' % field
 
         # get the table referenced by this field
-        linktable = requires[0].ktable
+        linktable = get_linktable(field)
 
         # get the value of the restricting field
         if restricted:
@@ -590,10 +552,7 @@ class FilteredOptionsWidget(OptionsWidget):
                 filter_val = filter_row[filter_field]
 
             # get the table referenced by the restricting field
-            filter_req = filter_field.requires
-            if not isinstance(filter_req, (list, tuple)):
-                filter_req = [filter_req]
-            filter_linktable = filter_req[0].ktable
+            filter_linktable = get_linktable(filter_field)
 
             #find the linktable field that references filter_linktable
             reffields = db[linktable].fields
@@ -616,3 +575,46 @@ class FilteredOptionsWidget(OptionsWidget):
         widget = SELECT(*opts, **attr)
 
         return widget
+
+
+def get_linktable(field):
+    """
+    Return name of table for this widget from its 'requires' attribute.
+    """
+    requires = field.requires
+    if not isinstance(field.requires, (list, tuple)):
+        requires = [field.requires]
+
+    try:
+        linktable = requires[0].ktable
+    except AttributeError:  # as when nested validators with IS_EMPTY_OR
+        linktable = requires[0].other.ktable
+
+    return linktable
+
+
+def sanitize_int_list(val, delimiter='|'):
+    """
+    Return val as a list of ints and not as plain int or str
+    """
+    def sanitize_internal(val):
+        if not isinstance(val, int):
+            try:
+                val = int(val)
+            except (ValueError, TypeError):
+                val = None  # empty string or alphabetical
+        return val
+
+    if val and isinstance(val, list):
+        val = [sanitize_internal(v) for v in val]
+        val = [v for v in val if v]
+    elif isinstance(val, str):
+        val = val.split(delimiter)
+        val = [sanitize_internal(v) for v in val]
+        val = [v for v in val if v]
+        val = val if len(val) else None
+    else:
+        val = sanitize_internal(val)
+        val = [val] if val else None
+
+    return val

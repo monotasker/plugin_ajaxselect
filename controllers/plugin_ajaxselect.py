@@ -1,4 +1,4 @@
-from plugin_ajaxselect import AjaxSelect, FilteredAjaxSelect
+from plugin_ajaxselect import AjaxSelect, FilteredAjaxSelect, get_linktable
 from pprint import pprint
 if 0:
     from gluon import current, SQLFORM, URL
@@ -16,10 +16,7 @@ def set_widget():
     fieldname = request.args[1]
     table = db[tablename]
     field = table[fieldname]
-    requires = field.requires
-    if not isinstance(requires, list):
-        requires = [requires]
-    linktable = requires[0].ktable
+    linktable = get_linktable(field)
 
     value = request.vars[fieldname]
     rval = request.vars['rval'] if 'rval' in request.vars.keys() else None
@@ -36,7 +33,8 @@ def set_widget():
     if request.vars['restricted'] in (None, 'None'):
         w, modal = AjaxSelect(field, value, **kwargs).widget_contents()
     else:
-        w, modal = FilteredAjaxSelect(field, value, rval=rval, **kwargs).widget_contents()
+        w, modal = FilteredAjaxSelect(field, value, rval=rval,
+                                      **kwargs).widget_contents()
 
     return dict(wrapper=w,
                 modal=modal,
@@ -56,8 +54,7 @@ def linked_edit_form():
         table = db[tablename]
         field = table[fieldname]
 
-        req = field.requires if isinstance(field.requires, list) else [field.requires]
-        linktable = req[0].ktable
+        linktable = get_linktable(field)
 
         this_row = request.args[2]
         wrappername = request.vars['wrappername']
@@ -100,9 +97,7 @@ def linked_create_form():
         table = db[tablename]
         field = table[fieldname]
 
-        req = field.requires if isinstance(field.requires, list) \
-            else [field.requires]
-        linktable = req[0].ktable
+        linktable = get_linktable(field)
 
         formname = '{}_create'.format(wrappername)
         form = SQLFORM(db[linktable])

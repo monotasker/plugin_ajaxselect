@@ -133,7 +133,7 @@ class AjaxSelect(object):
 
         # find table referenced by widget
         self.fieldset = str(field).split('.')
-        self.linktable = self.get_linktable(field)
+        self.linktable = get_linktable(field)
 
         # processed variables
         self.wrappername = self.get_wrappername(self.fieldset)
@@ -232,38 +232,6 @@ class AjaxSelect(object):
         name = '{}_{}_loader{}'.format(fieldset[0], fieldset[1], str(windex))
         return name
 
-    def get_linktable(self, field):
-        """
-        Return name of table for this widget from its 'requires' attribute.
-        """
-        if not isinstance(field.requires, list):
-            requires = [field.requires]
-        else:
-            requires = field.requires
-        linktable = requires[0].ktable
-
-        return linktable
-
-    def sanitize_int(self, val):
-        """
-        Return val as an int and not as a single-item list.
-        """
-        if type(val) == list:
-            try:
-                if (val == []) or (val[0] == '' and len(val) < 2):
-                    val = None
-                elif val and len(val) < 2:
-                    val = val[0]
-                else:
-                    val = [int(v) for v in val]
-            except ValueError, e:
-                print e
-                val = None  # to handle a blank string being passed to int(v)
-            except IndexError, e:
-                print e
-                val = None  # to handle an empty list
-        return val
-
     def choose_val(self, value):
         """
         Use value stored in session if changes to widget haven't been sent to
@@ -277,18 +245,7 @@ class AjaxSelect(object):
             val = value
             session[self.wrappername] = None
 
-        return self.sanitize_int(val)
-
-    def sanitize_valstring(self, value):
-        """
-        Return list:reference value string without problematic characters.
-        """
-        if (not self.multi in [None, 'False']) and isinstance(value, list):
-            return ','.join(map(str, value))
-        elif value:
-            return value
-        else:
-            return None
+        return sanitize_int_list(val)
 
     def restrict(self, restricted):
         """Isolate creation of this value so that it can be overridden in
@@ -522,15 +479,30 @@ class FilteredOptionsWidget(OptionsWidget):
                 print 'widget cannot get options of %s' % field
 
         # get the table referenced by this field
-        linktable = requires[0].ktable
-        print 'getting options for table ', linktable
+        linktable = get_linktable(field)
 
         # get the value of the restricting field
-        table = field.table
-        filter_field = table[restricted]
-        if rval:
-            filter_val = rval
-            print 'new restricting value is ', rval
+        if restricted:
+            table = field.table
+            filter_field = table[restricted]
+            if rval:
+                filter_val = rval
+            else:
+                filter_row = db(field == value).select().first()
+                filter_val = filter_row[filter_field]
+
+            # get the table referenced by the restricting field
+            filter_linktable = get_linktable(filter_field)
+
+            #find the linktable field that references filter_linktable
+            reffields = db[linktable].fields
+            ref = 'reference {}'.format(filter_linktable)
+            cf = [f for f in reffields if db[linktable][f].type == ref][0]
+
+            # filter and order raw list of options
+            myorder = orderby if (orderby and orderby.replace('~', '')
+                                  in reffields) else 'id'
+            rows = db(db[linktable][cf] == filter_val).select(orderby=myorder)
         else:
             filter_row = db(field == value).select().first()
             print 'restricting row is ', filter_row
@@ -558,4 +530,48 @@ class FilteredOptionsWidget(OptionsWidget):
         # build widget with filtered options
         opts = [OPTION(v, _value=k) for (k, v) in f_options]
 
-        return SELECT(*opts, **attr)
+        widget = SELECT(*opts, **attr)
+        return widget
+
+
+def get_linktable(field):
+    """
+    Return name of table for this widget from its 'requires' attribute.
+    """
+    requires = field.requires
+    if not isinstance(field.requires, (list, tuple)):
+        requires = [field.requires]
+
+    try:
+        linktable = requires[0].ktable
+    except AttributeError:  # as when nested validators with IS_EMPTY_OR
+        linktable = requires[0].other.ktable
+
+    return linktable
+
+
+def sanitize_int_list(val, delimiter='|'):
+    """
+    Return val as a list of ints and not as plain int or str
+    """
+    def sanitize_internal(val):
+        if not isinstance(val, int):
+            try:
+                val = int(val)
+            except (ValueError, TypeError):
+                val = None  # empty string or alphabetical
+        return val
+
+    if val and isinstance(val, list):
+        val = [sanitize_internal(v) for v in val]
+        val = [v for v in val if v]
+    elif isinstance(val, str):
+        val = val.split(delimiter)
+        val = [sanitize_internal(v) for v in val]
+        val = [v for v in val if v]
+        val = val if len(val) else None
+    else:
+        val = sanitize_internal(val)
+        val = [val] if val else None
+
+    return val

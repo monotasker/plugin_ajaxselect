@@ -13,7 +13,7 @@
                                  height: @baseLineHeight;
                                  line-height: @baseLineHeight;
                                  font-size: @baseFontSize;
-                                 .border-radius(0 3px 3px 0);
+                                 .border-radius(0 @borderRadiusLarge @borderRadiusLarge 0);
                                  clear:right;
                                  text-align:center;
                                  text-decoration:none;
@@ -44,15 +44,13 @@
                 }
             }
             span.label,
-            a.label            {.border-radius(3px 0 0 3px);
+            a.label            {
                 &.label-info   {width:75%;
                                 max-width:75%;
                                 overflow:hidden;}
-                &.edit_trigger {.border-radius(0);
-                                text-align: center;
+                &.edit_trigger {text-align: center;
                                 clear:right;}
-                &.tag_remover  {.border-radius(0 3px 3px 0);
-                                clear:right;}
+                &.tag_remover  {clear:right;}
             }
         }
     }

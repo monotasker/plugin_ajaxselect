@@ -7,20 +7,23 @@
 AjaxSelect	plugin_ajaxselect.py	/^class AjaxSelect(object):$/;"	c
 FilteredAjaxSelect	plugin_ajaxselect.py	/^class FilteredAjaxSelect(AjaxSelect):$/;"	c
 FilteredOptionsWidget	plugin_ajaxselect.py	/^class FilteredOptionsWidget(OptionsWidget):$/;"	c
-__init__	plugin_ajaxselect.py	/^    def __init__(self):$/;"	m	class:AjaxSelect
-adder	plugin_ajaxselect.py	/^    def adder(self, wrappername, linktable, uargs, uvars, form_name):$/;"	m	class:AjaxSelect
-choose_val	plugin_ajaxselect.py	/^    def choose_val(self, val, wrappername):$/;"	m	class:AjaxSelect
-classes	plugin_ajaxselect.py	/^    def classes(self, linktable, restricted, restrictor, lister, sortable):$/;"	m	class:AjaxSelect
-clean	plugin_ajaxselect.py	/^    def clean(self, value, multi):$/;"	m	class:AjaxSelect
+__init__	plugin_ajaxselect.py	/^    def __init__(self, field, value,$/;"	m	class:AjaxSelect
+choose_val	plugin_ajaxselect.py	/^    def choose_val(self, value):$/;"	m	class:AjaxSelect
+create_widget	plugin_ajaxselect.py	/^    def create_widget(self):$/;"	m	class:AjaxSelect
 create_widget	plugin_ajaxselect.py	/^    def create_widget(self, field, value, clean_val, multi, restricted, rval):$/;"	m	class:FilteredAjaxSelect
-create_widget	plugin_ajaxselect.py	/^    def create_widget(self, field, value, clean_val, multi, restricted, rval,$/;"	m	class:AjaxSelect
-hidden_ajax_field	plugin_ajaxselect.py	/^    def hidden_ajax_field(self, wrappername, clean_val):$/;"	m	class:AjaxSelect
-linklist	plugin_ajaxselect.py	/^    def linklist(self, value, linktable, uargs, uvars, sortable):$/;"	m	class:AjaxSelect
-linktable	plugin_ajaxselect.py	/^    def linktable(self, field):$/;"	m	class:AjaxSelect
-refresher	plugin_ajaxselect.py	/^    def refresher(self, wrappername, linktable, uargs, uvars):$/;"	m	class:AjaxSelect
-restricted	plugin_ajaxselect.py	/^    def restricted(self, restricted):$/;"	m	class:AjaxSelect
-restricted	plugin_ajaxselect.py	/^    def restricted(self, restricted):$/;"	m	class:FilteredAjaxSelect
-taglist	plugin_ajaxselect.py	/^    def taglist(self, value, linktable, sortable):$/;"	m	class:AjaxSelect
+get_classes	plugin_ajaxselect.py	/^    def get_classes(self, linktable, restricted, restrictor, lister, sortable):$/;"	m	class:AjaxSelect
+get_linktable	plugin_ajaxselect.py	/^    def get_linktable(self, field):$/;"	m	class:AjaxSelect
+get_widget_index	plugin_ajaxselect.py	/^    def get_widget_index(self):$/;"	m	class:AjaxSelect
+get_wrappername	plugin_ajaxselect.py	/^    def get_wrappername(self, fieldset):$/;"	m	class:AjaxSelect
+hidden_ajax_field	plugin_ajaxselect.py	/^    def hidden_ajax_field(self):$/;"	m	class:AjaxSelect
+listcheck	plugin_ajaxselect.py	/^def listcheck(val):$/;"	f
+make_adder	plugin_ajaxselect.py	/^    def make_adder(self, wrappername, linktable):$/;"	m	class:AjaxSelect
+make_linklist	plugin_ajaxselect.py	/^    def make_linklist(self, value, linktable, uargs, uvars, sortable):$/;"	m	class:AjaxSelect
+make_refresher	plugin_ajaxselect.py	/^    def make_refresher(self, wrappername, linktable, uargs, uvars):$/;"	m	class:AjaxSelect
+make_taglist	plugin_ajaxselect.py	/^    def make_taglist(self):$/;"	m	class:AjaxSelect
+restrict	plugin_ajaxselect.py	/^    def restrict(self, restricted):$/;"	m	class:AjaxSelect
+restrict	plugin_ajaxselect.py	/^    def restrict(self, restricted):$/;"	m	class:FilteredAjaxSelect
+sanitize_int_list	plugin_ajaxselect.py	/^    def sanitize_int_list(self, val):$/;"	m	class:AjaxSelect
+sanitize_internal	plugin_ajaxselect.py	/^        def sanitize_internal(val):$/;"	f	function:AjaxSelect.sanitize_int_list
 widget	plugin_ajaxselect.py	/^    def widget(cls, field, value, restricted, rval, **attributes):$/;"	m	class:FilteredOptionsWidget
-widget	plugin_ajaxselect.py	/^    def widget(self, field, value, restricted=None, refresher=False,$/;"	m	class:AjaxSelect
-wrappername	plugin_ajaxselect.py	/^    def wrappername(self, fieldset):$/;"	m	class:AjaxSelect
+widget	plugin_ajaxselect.py	/^    def widget(self):$/;"	m	class:AjaxSelect

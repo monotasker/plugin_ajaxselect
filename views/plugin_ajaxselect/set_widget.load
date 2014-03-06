@@ -3,12 +3,37 @@
 {{pass}}
 
 <script>
-        $('ul.sortable').sortable({
-            placeholder: 'ui-state-highlight',
-            stop: function(event, ui){ 
-                var $taglist = $(event.target).find('li');
-                whenSortStops($taglist); 
-            } 
-        });
-        $('ul.sortable').disableSelection();
+
+    $('#{{=wrappername}} .add_trigger').on('click', function(event){
+        var url = $(self).attr('href');
+        var divname = 'div#{{=wrappername}}_adder.modal'
+        if ($(divname).length < 1){
+            // TODO: Why does jquery not find existing modal div?
+            console.log($(divname)[0]);
+            var modal = '{{=modal}}';
+            $('body').append(modal);
+        }
+        window.setTimeout(function(){
+            modaldiv = $(divname);
+            web2py_component(url, divname + ' modal-body');
+            modaldiv.modal('show');
+        }, 500);
+        event.preventDefault();
+    });
+
+    $('#{{=wrappername}} ul.sortable').sortable({
+        placeholder: 'ui-state-highlight',
+        stop: function(event, ui){
+            var $taglist = $(event.target).find('li');
+            whenSortStops($taglist);
+        }
+    });
+    $('#{{=wrappername}} ul.sortable').disableSelection();
+    $('#{{=wrappername}}.plugin_ajaxselect select option').on('click', function(event){
+        addtag(event.target);
+    });
+    $('#{{=wrappername}} a.tag_remover').on('click', function(event){
+        removetag(event.target);
+    });
+
 </script>

@@ -275,8 +275,6 @@ class AjaxSelect(object):
         """
         session = current.session
 
-<<<<<<< HEAD
-=======
         val = value
         if (self.wrappername in session.keys()):
             if session[self.wrappername]:
@@ -287,7 +285,6 @@ class AjaxSelect(object):
         else:
             pass
 
->>>>>>> 7bb69c794135ea5950b50f0703d9cc8e47d58573
         return sanitize_int_list(val)
 
     def restrict(self, restricted):
@@ -577,10 +574,6 @@ class FilteredOptionsWidget(OptionsWidget):
         opts = [OPTION(v, _value=k) for (k, v) in f_options]
         widget = SELECT(*opts, **attr)
 
-<<<<<<< HEAD
-        widget = SELECT(*opts, **attr)
-=======
->>>>>>> 7bb69c794135ea5950b50f0703d9cc8e47d58573
         return widget
 
 

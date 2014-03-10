@@ -1,23 +1,27 @@
+<<<<<<< HEAD
 from plugin_ajaxselect import AjaxSelect, FilteredAjaxSelect, get_linktable, listcheck
+=======
+from plugin_ajaxselect import AjaxSelect, FilteredAjaxSelect, get_linktable
+>>>>>>> 7bb69c794135ea5950b50f0703d9cc8e47d58573
 from pprint import pprint
 if 0:
-    from gluon import current, dal, LOAD, SQLFORM, URL
+    from gluon import current, SQLFORM, URL
     request, session, response = current.request, current.session, current.response
-    db = dal.DAL()
+    db = current.db
 
 
 def set_widget():
     """
-    creates a replacement select widget using the AjaxSelect or
-    FilteredAjaxSelect classes and returns the new widget via ajax.
+    Return a replacement AjaxSelect or FilteredAjaxSelect widget via ajax.
     """
     #get variables to build widget for the proper field
-    #TODO: Can I get the table from db[field]._table or something like that?
+
     tablename = request.args[0]
     fieldname = request.args[1]
     table = db[tablename]
     field = table[fieldname]
     linktable = get_linktable(field)
+<<<<<<< HEAD
 
     #get current value of widget
     wrp = request.vars['wrappername']
@@ -32,18 +36,25 @@ def set_widget():
         rval = request.vars['rval']
     else:
         rval = None
+=======
+>>>>>>> 7bb69c794135ea5950b50f0703d9cc8e47d58573
 
-    kwargs = {'refresher': request.vars['refresher'],
+    value = request.vars[fieldname]
+    rval = request.vars['rval'] if 'rval' in request.vars.keys() else None
+    kwargs = {'indx': request.vars['indx'],
+              'refresher': request.vars['refresher'],
               'adder': request.vars['adder'],
-              'restricted': request.vars['restricted'],
               'restrictor': request.vars['restrictor'],
               'multi': request.vars['multi'],
               'lister': request.vars['lister'],
-              'sortable': request.vars['sortable']}
-
+              'restricted': request.vars['restricted'],
+              'sortable': request.vars['sortable'],
+              'orderby': request.vars['orderby']}
+    #print 'controller: kwargs is ', kwargs
     if request.vars['restricted'] in (None, 'None'):
-        w = AjaxSelect(field, value, linktable, **kwargs).widget()
+        w, modal = AjaxSelect(field, value, **kwargs).widget_contents()
     else:
+<<<<<<< HEAD
         w = FilteredAjaxSelect(field, value, linktable, rval=rval, **kwargs).widget()
 
     return dict(wrapper=w, linktable=linktable, tablename=tablename)
@@ -73,13 +84,16 @@ def set_form_wrapper():
         form_maker = 'linked_edit_form.load'
     else:
         form_maker = 'linked_create_form.load'
+=======
+        w, modal = FilteredAjaxSelect(field, value, rval=rval,
+                                      **kwargs).widget_contents()
+>>>>>>> 7bb69c794135ea5950b50f0703d9cc8e47d58573
 
-    formwrapper = LOAD('plugin_ajaxselect', form_maker,
-                       args=request.args,
-                       vars=request.vars,
-                       ajax=True)
-
-    return {'formwrapper': formwrapper}
+    return dict(wrapper=w,
+                modal=modal,
+                linktable=linktable,
+                tablename=tablename,
+                wrappername=request.vars['wrappername'])
 
 
 def linked_edit_form():

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-from plugin_ajaxselect import AjaxSelect, FilteredAjaxSelect, get_linktable, listcheck
-=======
 from plugin_ajaxselect import AjaxSelect, FilteredAjaxSelect, get_linktable
->>>>>>> 7bb69c794135ea5950b50f0703d9cc8e47d58573
 from pprint import pprint
 if 0:
     from gluon import current, SQLFORM, URL
@@ -21,23 +17,23 @@ def set_widget():
     table = db[tablename]
     field = table[fieldname]
     linktable = get_linktable(field)
-<<<<<<< HEAD
+#<<<<<<< HEAD
 
-    #get current value of widget
-    wrp = request.vars['wrappername']
-    if wrp in session and session[wrp] is not None:
-        value = session[request.vars['wrappername']]
-    else:
-        valstring = request.vars['value']
-        #restore value to list since it was converted to string for url
-        value = valstring.split(',')
+    ##get current value of widget
+    #wrp = request.vars['wrappername']
+    #if wrp in session and session[wrp] is not None:
+        #value = session[request.vars['wrappername']]
+    #else:
+        #valstring = request.vars['value']
+        ##restore value to list since it was converted to string for url
+        #value = valstring.split(',')
 
-    if 'rval' in request.vars:
-        rval = request.vars['rval']
-    else:
-        rval = None
-=======
->>>>>>> 7bb69c794135ea5950b50f0703d9cc8e47d58573
+    #if 'rval' in request.vars:
+        #rval = request.vars['rval']
+    #else:
+        #rval = None
+#=======
+#>>>>>>> 7bb69c794135ea5950b50f0703d9cc8e47d58573
 
     value = request.vars[fieldname]
     rval = request.vars['rval'] if 'rval' in request.vars.keys() else None
@@ -54,40 +50,40 @@ def set_widget():
     if request.vars['restricted'] in (None, 'None'):
         w, modal = AjaxSelect(field, value, **kwargs).widget_contents()
     else:
-<<<<<<< HEAD
-        w = FilteredAjaxSelect(field, value, linktable, rval=rval, **kwargs).widget()
+#<<<<<<< HEAD
+        #w = FilteredAjaxSelect(field, value, linktable, rval=rval, **kwargs).widget()
 
-    return dict(wrapper=w, linktable=linktable, tablename=tablename)
-
-
-def setval():
-    """Called when user changes value of AjaxSelect widget. Stores the current
-    widget state in a session object to be used if the widget is refreshed
-    before the form is processed."""
-
-    theinput = request.args[0]
-    wrappername = theinput.replace('_input', '')
-    curval = listcheck(request.vars[theinput])[0]
-    curval = str(curval).split(',')
-    curvalInts = [int(i) for i in curval if i]  # condition for None val
-    session[wrappername] = curvalInts
-
-    return curval
+    #return dict(wrapper=w, linktable=linktable, tablename=tablename)
 
 
-def set_form_wrapper():
-    """
-    Creates the LOAD helper to hold the modal form for creating a new item in
-    the linked table
-    """
-    if len(request.args) > 2:
-        form_maker = 'linked_edit_form.load'
-    else:
-        form_maker = 'linked_create_form.load'
-=======
+#def setval():
+    #"""Called when user changes value of AjaxSelect widget. Stores the current
+    #widget state in a session object to be used if the widget is refreshed
+    #before the form is processed."""
+
+    #theinput = request.args[0]
+    #wrappername = theinput.replace('_input', '')
+    #curval = listcheck(request.vars[theinput])[0]
+    #curval = str(curval).split(',')
+    #curvalInts = [int(i) for i in curval if i]  # condition for None val
+    #session[wrappername] = curvalInts
+
+    #return curval
+
+
+#def set_form_wrapper():
+    #"""
+    #Creates the LOAD helper to hold the modal form for creating a new item in
+    #the linked table
+    #"""
+    #if len(request.args) > 2:
+        #form_maker = 'linked_edit_form.load'
+    #else:
+        #form_maker = 'linked_create_form.load'
+#=======
         w, modal = FilteredAjaxSelect(field, value, rval=rval,
                                       **kwargs).widget_contents()
->>>>>>> 7bb69c794135ea5950b50f0703d9cc8e47d58573
+#>>>>>>> 7bb69c794135ea5950b50f0703d9cc8e47d58573
 
     return dict(wrapper=w,
                 modal=modal,

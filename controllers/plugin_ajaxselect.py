@@ -17,7 +17,6 @@ def set_widget():
     table = db[tablename]
     field = table[fieldname]
     linktable = get_linktable(field)
-#<<<<<<< HEAD
 
     ##get current value of widget
     #wrp = request.vars['wrappername']
@@ -32,8 +31,6 @@ def set_widget():
         #rval = request.vars['rval']
     #else:
         #rval = None
-#=======
-#>>>>>>> 7bb69c794135ea5950b50f0703d9cc8e47d58573
 
     value = request.vars[fieldname]
     rval = request.vars['rval'] if 'rval' in request.vars.keys() else None

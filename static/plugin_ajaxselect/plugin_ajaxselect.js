@@ -1,26 +1,28 @@
 // Javascript for the AjaxSelect and related widgets
 // part of the plugin_ajaxselect plugin for web2py
 
-//TODO: Bind a separate function to the select if multi=False or no taglist
-//when select value is changed, update
-function addtag(opt){
-    //COMMON get landmarks to navigate dom =====================
+// TODO: Bind a separate function to the select if multi=False or no taglist
+// when select value is changed, update
+
+function addtag(e, opt){
+    // COMMON get landmarks to navigate dom =====================
     var $p = $(opt).parents('span');
-    //get $select, wrappername, $td in info object
+    // get $select, wrappername, $td in info object
     var myinfo = info($p);
-    var r_url = geturl(myinfo.$td);
+    var r_url = geturl(myinfo.td);
 
     //add tag for this option to taglist =======================
     var $taglist = $p.find('.taglist');
     var linfo = linkinfo(r_url.url, r_url.vars);
     var newval = $(opt).attr('value');
     var newtext = $(opt).text();
+    var newtag;
     if($p.hasClass('lister_editlinks')){
-        var newtag = editlink(linfo, r_url.args, r_url.vars, newval, newtext);
+        newtag = editlink(linfo, r_url.args, r_url.vars, newval, newtext);
         $taglist.append(newtag);
     }
     else if($p.hasClass('lister_simple')){
-        var newtag = tag(newval, newtext);
+        newtag = tag(newval, newtext);
         $taglist.append(newtag);
     }
     // FIXME: Shouldn't have to re-bind this here
@@ -31,13 +33,17 @@ function addtag(opt){
     $('ul.sortable').sortable('refresh');
     //update select value
     vals = valFromTags($taglist);
-    myinfo.$select.val(vals);
-    event.preventDefault();
+
+    myinfo.select.val(vals);
+    if ( $p.hasClass('restrictor') ){
+        triggerRestriction($(opt));
+    }
+    e.preventDefault();
 }
 
 function valFromTags($taglist){
     var vals = new Array();
-    $taglist.find('li').each(function(){
+    $taglist.find('li').each(function(e){
         var theid = $(this).attr('id');
         vals.push(theid);
     });
@@ -52,14 +58,14 @@ function whenSortStops($taglist){
 
     //var vals = valFromTags($taglist);
     var vals = new Array();
-    $taglist.each(function(){
+    $taglist.each(function(e){
         var theid = $(this).attr('id');
         vals.push(theid);
     });
     console.log(vals);
-    myinfo.$select.val(vals);
+    myinfo.select.val(vals);
 
-    //reorder options in widget
+    // reorder options in widget
     for (var i = 0; i < vals.length; i++) {
         var $opts = myinfo.$select.children('option');
         var $opt = myinfo.$select.find('option[value=' + vals[i] + ']');
@@ -69,7 +75,7 @@ function whenSortStops($taglist){
 }
 
 //remove an option by clicking on the remover icon in a tag
-function removetag(tag){
+function removetag(e, tag){
     //COMMON get landmarks to navigate dom =====================
     var $p = $(tag).parents('span');
     //get $select, wrappername, $theinput, theinput, $td in info object
@@ -83,7 +89,7 @@ function removetag(tag){
 
     var $taglist = $p.find('.taglist');
     var vals = valFromTags($taglist);
-    myinfo.$select.val(vals);
+    myinfo.select.val(vals);
 
     //var vals = myinfo.$select.val()
     //if (vals.length > 0){
@@ -95,35 +101,41 @@ function removetag(tag){
         //myinfo.$select.val(null);
     //}
 
-    event.preventDefault();
+    e.preventDefault();
 }
 
 //constrain and refresh appropriate select widgets if restrictor widget's
 //value is changed
-$('.restrictor select').on('change', function(event){
+
+function triggerRestriction($option){
+    console.log('I fired!');
     //get selected value of the restrictor widget to use in constraining the
     //target widget
-    var new_val = $(this).find('option:selected').val();
+    var new_val = $option.parents('select').find('option:selected').val();
 
     //get table of the current form from id of restrictor widget
-    var parts = $(this).attr('id').split('_');
+    var myid = $option.parents('select').attr('id');
+    var parts = myid.split('_');
     var table = parts[0];
     //get field of the restrictor widget, again from its id
     var r_field = parts[1];
 
-    var classlist = $(this).parents('span').attr('class').split(/\s+/);
+    var classlist = $option.parents('span').attr('class').split(/\s+/);
     var linktable = classlist[1]
+    console.log('linktable '+ linktable);
     //constrain and refresh each widget with a corresponding 'for_' class on
     //the restrictor widget
     //TODO: add logic in module to insert a for_ class for multiple
     //constrained fields
     $.each(classlist, function(index,item){
-       if(item.substring(0,4) == 'for_'){
+       if(item.substring(0,15) == 'restrictor_for_'){
            //get name of field for widget to be constrained, from the
            //restrictor's classes
-           field = item.substring(4);
+           field = item.substring(15);
+           console.log('field ' + field);
            //assemble name for span wrapping the widget to be constrained
-           var span_id = table + '_' + field + '_loader'
+           var span_id = table + '_' + field + '_loader0'
+           console.log(span_id);
            //assemble url to use for refreshing the constrained widget
            //from url set in modules/plugin_ajaxselect.py for adder
            //this should include the vars (url params) 'fieldval' and
@@ -132,10 +144,11 @@ $('.restrictor select').on('change', function(event){
            r_url += '&rval=' + new_val + '&rtable=' + linktable;
            //refresh the widget by refreshing the contents of the wrapper
            //component
+           console.log(r_url);
            web2py_component(r_url, span_id);
        }
     });
-});
+}
 
 //utility - determine whether a string contains 'value='
 function isValue(x){
@@ -148,7 +161,7 @@ function info($p){
     var wrappername = $p.attr('id');
     var $select = $p.find('select');
     var $td = $p.parents('li, td');
-    return {'wrappername':wrappername, '$select':$select, '$td':$td}
+    return {'wrappername':wrappername, 'select':$select, 'td':$td}
 }
 
 //utility - get url, a string with its args, and a string with its vars

@@ -120,7 +120,7 @@ class AjaxSelect(object):
     widgets referencing the same table from a single form. Each field within
     the form's table should be given a different 'indx' value to differentiate
     the widget from others. Without this differentiating value the widgets will
-    interfere with one another when any on of them is refreshed.
+    interfere with one another when any one of them is refreshed.
 
     :param orderby (str; defaults to id): Takes the name of a field in the
     referenced table to be used for ordering the entries in the widget. By
@@ -154,16 +154,18 @@ class AjaxSelect(object):
         # find table referenced by widget
         self.fieldset = str(field).split('.')
         self.linktable = get_linktable(field)
-
         # processed variables
         self.wrappername = self.get_wrappername(self.fieldset)
         self.form_name = '%s_adder_form' % self.linktable  # for referenced table form
 
         # get the field value (choosing db or session here)
         self.value = self.choose_val(value)
-        if value and len(value) > 0:
-            self.clean_val = ','.join(map(str, value))
-        else:
+        try:
+            if value and len(value) > 0:
+                self.clean_val = ','.join(map(str, value))
+            else:
+                self.clean_val = value
+        except TypeError:
             self.clean_val = value
         # args for add and refresh urls
         self.uargs = self.fieldset
@@ -192,6 +194,7 @@ class AjaxSelect(object):
         wrapper.append(LOAD('plugin_ajaxselect', 'set_widget.load',
                             args=self.uargs, vars=uvars,
                             target=self.wrappername))
+        print 'AjaxSelect::widget: val =', self.value, '(', self.fieldset[1], ')'
         return wrapper
 
     def widget_contents(self):
@@ -296,16 +299,16 @@ class AjaxSelect(object):
         """
         create either a single select widget or multiselect widget
         """
-        if not self.multi in [None, 'False']:
+        print 'AjaxSelect::create_widget: value =', self.value
+        if not self.multi in [None, False, 'False']:
             if self.orderby:
-                w = FilteredOptionsWidget.widget(self.field, self.value,
+                w = FilteredMultipleOptionsWidget.widget(self.field, self.value,
                                                  orderby=self.orderby,
                                                  multiple='multiple')
             else:
                 w = MultipleOptionsWidget.widget(self.field, self.value)
             #place selected items at end of sortable select widget
             if self.sortable:
-                print 'val: ', self.value
                 try:
                     for v in self.value:
                         opt = w.element(_value=v)
@@ -327,6 +330,7 @@ class AjaxSelect(object):
                 w = FilteredOptionsWidget.widget(self.field, self.value,
                                                  orderby=self.orderby)
             else:
+                print 'AjaxSelect::create_widget: value =', self.value
                 w = OptionsWidget.widget(self.field, self.value)
 
         w['_id'] = '{}_{}'.format(self.fieldset[0], self.fieldset[1])
@@ -353,9 +357,9 @@ class AjaxSelect(object):
               'return false;'.format(url=comp_url,
                                      wn=self.wrappername,
                                      n=self.fieldset[1])
-        refresh_link = A(u'\u200B', _onclick=ajs,
-                         _href='#', _id=refresher_id,
-                         _class='refresh_trigger badge badge-info icon-refresh',
+        refresh_link = A(SPAN(_class='glyphicon glyphicon-refresh'), _onclick=ajs,
+                         _href=comp_url, _id=refresher_id,
+                         _class='refresh_trigger badge badge-info ',
                          _style=rstyle)
 
         return refresh_link
@@ -365,10 +369,10 @@ class AjaxSelect(object):
         try:
             attrs = {'_href': URL('plugin_ajaxselect', 'linked_create_form.load',
                                   args=self.uargs, vars=self.uvars)}
-            adder = MODAL(u'\u200B',
+            adder = MODAL(SPAN(_class='glyphicon glyphicon-plus'),
                           'Add new {} item'.format(self.linktable),
                           'Content',
-                          trigger_classes='add_trigger badge badge-success icon-plus',
+                          trigger_classes='add_trigger badge badge-success ',
                           trigger_type='link',
                           modal_classes='plugin_ajaxselect modal_adder',
                           attributes=attrs,
@@ -396,8 +400,8 @@ class AjaxSelect(object):
                     format_string = fmt(the_row) if callable(fmt) else fmt % the_row
                     listitem = LI(SPAN(format_string, _id=v, _class='label label-info'),
                                 _id=v, _class='tag')
-                    listitem.append(A(u"\u200b", _href='#',
-                                      _class='tag tag_remover icon-remove '
+                    listitem.append(A(SPAN(_class='glyphicon glyphicon-remove'), _href='#',
+                                      _class='tag tag_remover '
                                              'label label-important'))
                     taglist.append(listitem)
             else:
@@ -431,20 +435,18 @@ class AjaxSelect(object):
                 ln = LI(SPAN(formatted, _class='badge badge-info'),
                         _id=v, _class='editlink tag')
                 myargs = self.uargs[:]
-                print 'making linklist: self.uargs is', self.uargs
                 myargs.append(v)
-                print 'making linklist: myargs is ', myargs
-                elink = MODAL(u'\u200B',
+                elink = MODAL(SPAN(_class='glyphicon glyphicon-edit'),
                               'Edit {} item {}'.format(self.linktable, v),
                               LOAD('plugin_ajaxselect', 'linked_edit_form.load',
                                   args=myargs, vars=self.uvars, ajax=True),
-                              trigger_classes='linklist_edit_trigger badge badge-warning icon-edit',
+                              trigger_classes='linklist_edit_trigger badge badge-warning ',
                               trigger_type='link',
                               modal_classes='plugin_ajaxselect modal_linklist_edit',
                               id='{}_{}'.format(self.linktable, v))
                 ln.append(elink)
-                ln.append(A(u'\u200B',
-                            _class='tag tag_remover icon-remove '
+                ln.append(A(SPAN(_class='glyphicon glyphicon-remove'),
+                            _class='tag tag_remover '
                                    'label label-important'))
                 ll.append(ln)
         return ll
@@ -455,9 +457,9 @@ class AjaxSelect(object):
         """
         classlist = 'plugin_ajaxselect {} '.format(linktable)
         if not restrictor in [None, 'False']:
-            classlist += 'restrictor_for_{} '.format(restrictor)
+            classlist += 'restrictor restrictor_for_{} '.format(restrictor)
         if restricted and restricted != 'False':
-            classlist += 'restricted_by_{} '.format(restricted)
+            classlist += 'restricted restricted_by_{} '.format(restricted)
         if lister == 'simple':
             classlist += 'lister_simple '
         elif lister == 'editlinks':
@@ -481,25 +483,54 @@ class FilteredAjaxSelect(AjaxSelect):
 
         return restricted
 
-    def create_widget(self, field, value, clean_val, multi, restricted, rval):
+    def create_widget(self):
         """create either a single select widget or multiselect widget"""
-
-        if multi:
-            w = MultipleOptionsWidget.widget(field, value)
-            #TODO: Create filtered multiple options widget class
-        else:
-            if rval:
-                w = FilteredOptionsWidget.widget(field, value,
-                                                 restricted, rval)
+        print 'FilteredAjaxSelect::create_widget: rval is', self.rval
+        if not self.multi in [None, False, 'False']:
+            if self.orderby or self.rval:
+                w = FilteredMultipleOptionsWidget.widget(self.field, self.value,
+                                                 orderby=self.orderby,
+                                                 multiple='multiple',
+                                                 restricted=self.restricted,
+                                                 rval=self.rval)
             else:
-                w = OptionsWidget.widget(field, value)
+                w = MultipleOptionsWidget.widget(self.field, self.value)
+            #place selected items at end of sortable select widget
+            if self.sortable:
+                print 'val: ', self.value
+                try:
+                    for v in self.value:
+                        opt = w.element(_value=v)
+                        i = w.elements().index(opt)
+                        w.append(opt)
+                        del w[i - 1]
+                except AttributeError, e:
+                    if type(v) == 'IntType':
+                        opt = w.element(_value=self.value)
+                        i = w.elements().index(opt)
+                        w.append(opt)
+                        del w[i - 1]
+                    else:
+                        print e
+                except Exception, e:
+                        print e, type(e)
+        else:
+            if self.orderby or self.rval:
+                w = FilteredOptionsWidget.widget(self.field, self.value,
+                                                 orderby=self.orderby,
+                                                 restricted=self.restricted,
+                                                 rval=self.rval)
+            else:
+                w = OptionsWidget.widget(self.field, self.value)
 
+        w['_id'] = '{}_{}'.format(self.fieldset[0], self.fieldset[1])
+        w['_name'] = self.fieldset[1]
         return w
 
 
 class FilteredOptionsWidget(OptionsWidget):
     """
-    Overrides the gluon.sqlhtml. OptionsWidget class to filter the list of
+    Overrides the gluon.sqlhtml.OptionsWidget class to filter the list of
     options.
     The initial list of options comes via field.requires.options(). This
     furnishes a list of tuples, each of which contains the id and format
@@ -519,6 +550,106 @@ class FilteredOptionsWidget(OptionsWidget):
         see also:
             :meth:`FormWidget.widget`
             :meth:`OptionsWidget.widget`
+        """
+        print 'FilteredOptionsWidget for', field, '============================'
+        db = current.db
+
+        default = {'value': value}
+        attributes.update({'_restricted': restricted,
+                           '_orderby': orderby,
+                           '_multiple': multiple})
+        attr = cls._attributes(field, default, **attributes)
+
+        # get raw list of options for this widget
+        requires = field.requires
+        if not isinstance(requires, (list, tuple)):
+            requires = [requires]
+        if requires:
+            if hasattr(requires[0], 'options'):
+                options = requires[0].options()
+            else:
+                raise SyntaxError(
+                    'widget cannot get options of %s' % field)
+        print 'first raw option:', options[0]
+        print 'options', options
+
+        # get the table referenced by this field
+        linktable = get_linktable(field)
+
+        # get the value of the restricting field
+        if restricted:
+            table = field.table
+            filter_field = table[restricted]
+            if rval:
+                filter_val = rval
+            else:
+                if isinstance(value, list):
+                    value = value[0]
+                if isinstance(value, str):
+                    value = value.replace("|", "");
+                filter_row = db(field == value).select().first()
+                filter_val = filter_row[filter_field]
+
+            # get the table referenced by the restricting field
+            filter_linktable = get_linktable(filter_field)
+
+            #find the linktable field that references filter_linktable
+            reffields = db[linktable].fields
+            ref = 'reference {}'.format(filter_linktable)
+            cf = [f for f in reffields if db[linktable][f].type == ref][0]
+
+            # filter and order raw list of options
+            myorder = orderby if (orderby and orderby.replace('~', '')
+                                  in reffields) else 'id'
+            rows = db(db[linktable][cf] != None).select(orderby=myorder)
+            rows = db(db[linktable][cf] == filter_val).select(orderby=myorder)
+        else:
+            reffields = db[linktable].fields
+            myorder = orderby if (orderby and orderby.replace('~', '')
+                                  in reffields) else 'id'
+            rows = db(db[linktable].id > 0).select(orderby=myorder)
+
+        # build widget with filtered and ordered options
+        f_options = []
+        value = value[0] if (isinstance(value, list) and len(value) == 1) else value
+        if value:
+            print 'value is', value
+            val_option = [o for r in rows for o in options
+                          if o[0] and r.id == int(o[0])and o[0] == str(value)][0]
+            f_options.append(val_option)
+            print 'val_option', val_option
+        f_options.extend([o for r in rows for o in options
+                          if o[0] and r.id == int(o[0]) and r.id != str(value)])
+        opts = [OPTION(v, _value=k) for (k, v) in f_options]
+        widget = SELECT(*opts, **attr)
+        print 'FilteredOptionsWidget::widget: value =', value
+        print '-------------------------------------------------'
+
+        return widget
+
+class FilteredMultipleOptionsWidget(MultipleOptionsWidget):
+    """
+    Overrides the gluon.sqlhtml. MultipleOptionsWidget class to filter the list of
+    options.
+    The initial list of options comes via field.requires.options(). This
+    furnishes a list of tuples, each of which contains the id and format
+    string for one option from the referenced field.
+    """
+
+    @classmethod
+    def widget(cls, field, value, restricted=None, rval=None,
+               orderby=None, multiple=True, **attributes):
+        """
+        generates a SELECT tag, including OPTIONs (only 1 option allowed)
+
+        This method takes one argument more than OptionsWidget.widget. The
+        restricted argument identifies the form field whose value constrains
+        the values to be included as available options for this widget.
+
+        see also:
+            :meth:`FormWidget.widget`
+            :meth:`OptionsWidget.widget`
+            :meth:`MultipleOptionsWidget.widget`
         """
         db = current.db
 

@@ -29,11 +29,17 @@
         }
     });
     $('#{{=wrappername}} ul.sortable').disableSelection();
+    $('#{{=wrappername}}.plugin_ajaxselect select[multiple] option').on('click', function(event){
+        addtag(event, event.target);
+    });
     $('#{{=wrappername}}.plugin_ajaxselect select option').on('click', function(event){
-        addtag(event.target);
+        $p = $(this).parents('span');
+        if ( $p.hasClass('restrictor') ){
+            triggerRestriction($(this));
+        }
     });
     $('#{{=wrappername}} a.tag_remover').on('click', function(event){
-        removetag(event.target);
+        removetag(event, event.target);
     });
 
 </script>

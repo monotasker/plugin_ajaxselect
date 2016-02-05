@@ -1,6 +1,6 @@
-@import "../../../plugin_framework/static/plugin_framework/css/framework.less";
+// out: ./plugin_ajaxselect.css
 
-.plugin_ajaxselect              {.clearfix;
+.plugin_ajaxselect              {//.clearfix;
     select                      {float:left;
                                  width:90%;
         div.w2p_fw &            {display:block;}
@@ -8,21 +8,23 @@
     .refresh_trigger,
     .add_trigger                {float: left;
                                  position:relative;
-                                 top: (@baseFontSize / 2);
-                                 width: @baseFontSize;
-                                 height: @baseLineHeight;
-                                 line-height: @baseLineHeight;
-                                 font-size: @baseFontSize;
-                                 .border-radius(0 @borderRadiusLarge @borderRadiusLarge 0);
+                                //  top: (@baseFontSize / 2);
+                                //  width: 1.5em;
+                                 height: 1.5em;
+                                 line-height: 1.5em;
+                                 font-size: 1em;
+                                 border-radius: 0;
                                  clear:right;
                                  text-align:center;
                                  text-decoration:none;
-                                 -moz-transition:all 100ms ease-in;    
-                                 -webkit-transition:all 100ms ease-in;    
+                                 -moz-transition:all 100ms ease-in;
+                                 -webkit-transition:all 100ms ease-in;
+                                 transition:all 100ms ease-in;
         &:hover,
-        &:active               {/*background-color:#003366;*/
+        &:active               {background-color:#003366;
                                 -moz-transition:all 100ms ease-in;
                                 -webkit-transition:all 100ms ease-in;
+                                 transition:all 100ms ease-in;
         }
     }
     ul.taglist                 {clear:both;

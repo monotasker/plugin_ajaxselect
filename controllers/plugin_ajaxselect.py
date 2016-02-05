@@ -18,21 +18,8 @@ def set_widget():
     field = table[fieldname]
     linktable = get_linktable(field)
 
-    ##get current value of widget
-    #wrp = request.vars['wrappername']
-    #if wrp in session and session[wrp] is not None:
-        #value = session[request.vars['wrappername']]
-    #else:
-        #valstring = request.vars['value']
-        ##restore value to list since it was converted to string for url
-        #value = valstring.split(',')
-
-    #if 'rval' in request.vars:
-        #rval = request.vars['rval']
-    #else:
-        #rval = None
-
     value = request.vars[fieldname]
+    print 'controller::set_widget: val =', value
     rval = request.vars['rval'] if 'rval' in request.vars.keys() else None
     kwargs = {'indx': request.vars['indx'],
               'refresher': request.vars['refresher'],
@@ -48,10 +35,6 @@ def set_widget():
         w, modal = AjaxSelect(field, value, **kwargs).widget_contents()
     else:
 #<<<<<<< HEAD
-        #w = FilteredAjaxSelect(field, value, linktable, rval=rval, **kwargs).widget()
-
-    #return dict(wrapper=w, linktable=linktable, tablename=tablename)
-
 
 #def setval():
     #"""Called when user changes value of AjaxSelect widget. Stores the current
@@ -80,7 +63,6 @@ def set_widget():
 #=======
         w, modal = FilteredAjaxSelect(field, value, rval=rval,
                                       **kwargs).widget_contents()
-#>>>>>>> 7bb69c794135ea5950b50f0703d9cc8e47d58573
 
     return dict(wrapper=w,
                 modal=modal,

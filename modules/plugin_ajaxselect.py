@@ -485,8 +485,11 @@ class FilteredAjaxSelect(AjaxSelect):
         """create either a single select widget or multiselect widget"""
 
         if multi:
-            w = MultipleOptionsWidget.widget(field, value)
-            #TODO: Create filtered multiple options widget class
+            if rval:
+                w = FilteredMultipleOptionsWidget.widget(field, value,
+                                                         restricted, rval)
+            else:
+                w = MultipleOptionsWidget.widget(field, value)
         else:
             if rval:
                 w = FilteredOptionsWidget.widget(field, value,

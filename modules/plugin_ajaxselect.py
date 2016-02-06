@@ -588,21 +588,23 @@ class FilteredOptionsWidget(OptionsWidget):
                 if isinstance(value, str):
                     value = value.replace("|", "");
                 filter_row = db(field == value).select().first()
-                filter_val = filter_row[filter_field]
+                filter_val = filter_row[filter_field] if filter_row else None
+            print 'filter_val:', filter_val
+            if filter_val:
+                # get the table referenced by the restricting field
+                filter_linktable = get_linktable(filter_field)
 
-            # get the table referenced by the restricting field
-            filter_linktable = get_linktable(filter_field)
+                #find the linktable field that references filter_linktable
+                reffields = db[linktable].fields
+                ref = 'reference {}'.format(filter_linktable)
+                cf = [f for f in reffields if db[linktable][f].type == ref][0]
 
-            #find the linktable field that references filter_linktable
-            reffields = db[linktable].fields
-            ref = 'reference {}'.format(filter_linktable)
-            cf = [f for f in reffields if db[linktable][f].type == ref][0]
-
-            # filter and order raw list of options
-            myorder = orderby if (orderby and orderby.replace('~', '')
-                                  in reffields) else 'id'
-            rows = db(db[linktable][cf] != None).select(orderby=myorder)
-            rows = db(db[linktable][cf] == filter_val).select(orderby=myorder)
+                # filter and order raw list of options
+                myorder = orderby if (orderby and orderby.replace('~', '')
+                                      in reffields) else 'id'
+                rows = db(db[linktable][cf] != None).select(orderby=myorder)
+                rows = db(db[linktable][cf] == filter_val).select(orderby=myorder)
+            else: rows = None
         else:
             reffields = db[linktable].fields
             myorder = orderby if (orderby and orderby.replace('~', '')
@@ -612,15 +614,18 @@ class FilteredOptionsWidget(OptionsWidget):
         # build widget with filtered and ordered options
         f_options = []
         value = value[0] if (isinstance(value, list) and len(value) == 1) else value
-        if value:
-            print 'value is', value
-            val_option = [o for r in rows for o in options
-                          if o[0] and r.id == int(o[0])and o[0] == str(value)][0]
-            f_options.append(val_option)
-            print 'val_option', val_option
-        f_options.extend([o for r in rows for o in options
-                          if o[0] and r.id == int(o[0]) and r.id != str(value)])
-        opts = [OPTION(v, _value=k) for (k, v) in f_options]
+        if rows:
+            if value:
+                print 'value is', value
+                val_option = [o for r in rows for o in options
+                              if o[0] and r.id == int(o[0])and o[0] == str(value)][0]
+                f_options.append(val_option)
+                print 'val_option', val_option
+            f_options.extend([o for r in rows for o in options
+                              if o[0] and r.id == int(o[0]) and r.id != str(value)])
+            opts = [OPTION(v, _value=k) for (k, v) in f_options]
+        else:
+            opts = []
         widget = SELECT(*opts, **attr)
         print 'FilteredOptionsWidget::widget: value =', value
         print '-------------------------------------------------'
@@ -642,7 +647,7 @@ class FilteredMultipleOptionsWidget(MultipleOptionsWidget):
         """
         generates a SELECT tag, including OPTIONs (only 1 option allowed)
 
-        This method takes one argument more than OptionsWidget.widget. The
+        This method takes one argument more than MultipleOptionsWidget.widget. The
         restricted argument identifies the form field whose value constrains
         the values to be included as available options for this widget.
 

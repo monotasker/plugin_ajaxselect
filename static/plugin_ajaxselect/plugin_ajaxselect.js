@@ -67,8 +67,8 @@ function whenSortStops($taglist){
 
     // reorder options in widget
     for (var i = 0; i < vals.length; i++) {
-        var $opts = myinfo.$select.children('option');
-        var $opt = myinfo.$select.find('option[value=' + vals[i] + ']');
+        var $opts = myinfo.select.children('option');
+        var $opt = myinfo.select.find('option[value=' + vals[i] + ']');
         console.log(vals[i]);
         $opt.insertAfter($opts.last());
     }

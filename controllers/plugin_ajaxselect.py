@@ -34,7 +34,14 @@ def set_widget():
     if request.vars['restricted'] in (None, 'None'):
         w, modal = AjaxSelect(field, value, **kwargs).widget_contents()
     else:
-#<<<<<<< HEAD
+        w, modal = FilteredAjaxSelect(field, value, rval=rval,
+                                      **kwargs).widget_contents()
+
+    return dict(wrapper=w,
+                modal=modal,
+                linktable=linktable,
+                tablename=tablename,
+                wrappername=request.vars['wrappername'])
 
 #def setval():
     #"""Called when user changes value of AjaxSelect widget. Stores the current
@@ -60,16 +67,6 @@ def set_widget():
         #form_maker = 'linked_edit_form.load'
     #else:
         #form_maker = 'linked_create_form.load'
-#=======
-        w, modal = FilteredAjaxSelect(field, value, rval=rval,
-                                      **kwargs).widget_contents()
-
-    return dict(wrapper=w,
-                modal=modal,
-                linktable=linktable,
-                tablename=tablename,
-                wrappername=request.vars['wrappername'])
-
 
 def linked_edit_form():
     """

@@ -402,7 +402,7 @@ class AjaxSelect(object):
                                 _id=v, _class='tag')
                     listitem.append(A(SPAN(_class='glyphicon glyphicon-remove'), _href='#',
                                       _class='tag tag_remover '
-                                             'label label-important'))
+                                             'label label-warning'))
                     taglist.append(listitem)
             else:
                 pass

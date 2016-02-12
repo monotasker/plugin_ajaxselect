@@ -27,7 +27,7 @@ function addtag(e, opt){
     }
     // FIXME: Shouldn't have to re-bind this here
     $taglist.find('a.tag_remover').on('click', function(event){
-        removetag(event.target);
+        removetag(event, event.target);
     });
     //make sure newly added tag is added to sortable binding
     $('ul.sortable').sortable('refresh');
@@ -47,7 +47,6 @@ function valFromTags($taglist){
         var theid = $(this).attr('id');
         vals.push(theid);
     });
-    console.log(vals);
     return vals;
 }
 
@@ -62,14 +61,12 @@ function whenSortStops($taglist){
         var theid = $(this).attr('id');
         vals.push(theid);
     });
-    console.log(vals);
     myinfo.select.val(vals);
 
     // reorder options in widget
     for (var i = 0; i < vals.length; i++) {
         var $opts = myinfo.select.children('option');
         var $opt = myinfo.select.find('option[value=' + vals[i] + ']');
-        console.log(vals[i]);
         $opt.insertAfter($opts.last());
     }
 }
@@ -78,12 +75,16 @@ function whenSortStops($taglist){
 function removetag(e, tag){
     //COMMON get landmarks to navigate dom =====================
     var $p = $(tag).parents('span');
-    //get $select, wrappername, $theinput, theinput, $td in info object
+    console.log($p);
+    //get select, wrappername, td in info object
     var myinfo = info($p);
-    var $prnt = $(tag).parent('li');
+    console.log(myinfo);
+    var $prnt = $(tag).closest('li');
+    console.log($prnt);
 
     //get value of removed option
     var val = $prnt.attr('id');
+    console.log(val);
     //remove option from list of selected values
     $prnt.remove();
 
@@ -209,8 +210,9 @@ function editlink(info, args, vars, newval, newtext){
 function tag(newval, newtext){
     newtag = '<li class="tag" id="' + newval + '">';
     newtag += '<span class="label label-info">' + newtext + '</span>';
-    newtag += '<a class="tag tag_remover label label-important icon-remove">&#x200b;</a>';
-    newtag += '</li>';
+    newtag += '<a class="tag tag_remover label label-warning icon-remove">';
+    newtag += '<span class="glyphicon glyphicon-remove"></span>';
+    newtag += '</a></li>';
 
     return newtag
 }

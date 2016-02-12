@@ -1,25 +1,27 @@
 {{for w in wrapper:}}
     {{=w}}
 {{pass}}
+{{=modal}}
 
 <script>
 
-    $('#{{=wrappername}} .add_trigger').on('click', function(event){
-        var url = $(self).attr('href');
-        var divname = 'div#{{=wrappername}}_adder.modal'
-        if ($(divname).length < 1){
-            // TODO: Why does jquery not find existing modal div?
-            console.log($(divname)[0]);
-            var modal = '{{=modal}}';
-            $('body').append(modal);
-        }
-        window.setTimeout(function(){
-            modaldiv = $(divname);
-            web2py_component(url, divname + ' modal-body');
-            modaldiv.modal('show');
-        }, 500);
-        event.preventDefault();
-    });
+    // $('#{{=wrappername}} .add_trigger').on('click', function(event){
+    //     var url = $(self).attr('href');
+    //     var divname = 'div#{{=wrappername}}_adder.modal'
+    //     if ($(divname).length < 1){
+    //         // TODO: Why does jquery not find existing modal div?
+    //         console.log($(divname)[0]);
+    //         var modal = '{{=modal}}';
+    //         $('body').append(modal);
+    //     }
+    //     window.setTimeout(function(){
+    //         modaldiv = $(divname);
+    //         web2py_component(url, divname + ' modal-body');
+    //         modaldiv.modal('show');
+    //     }, 500);
+    //     event.preventDefault();
+    // });
+
 
     $('#{{=wrappername}} ul.sortable').sortable({
         placeholder: 'ui-state-highlight',

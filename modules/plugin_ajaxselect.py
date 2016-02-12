@@ -367,15 +367,17 @@ class AjaxSelect(object):
     def make_adder(self, wrappername, linktable):
         '''Build link for adding a new entry to the linked table'''
         try:
-            attrs = {'_href': URL('plugin_ajaxselect', 'linked_create_form.load',
-                                  args=self.uargs, vars=self.uvars)}
+            # attrs = {'_href': URL('plugin_ajaxselect', 'linked_create_form.load',
+            #                       args=self.uargs, vars=self.uvars)}
+            content = LOAD('plugin_ajaxselect', 'linked_create_form.load',
+                           args=self.uargs, vars=self.uvars, ajax=True)
             adder = MODAL(SPAN(_class='glyphicon glyphicon-plus'),
                           'Add new {} item'.format(self.linktable),
-                          'Content',
+                          content,
                           trigger_classes='add_trigger badge badge-success ',
                           trigger_type='link',
                           modal_classes='plugin_ajaxselect modal_adder',
-                          attributes=attrs,
+                        #   attributes=attrs,
                           id='{}_adder'.format(wrappername))
             add_trigger = adder[0]
             add_modal = adder[1]

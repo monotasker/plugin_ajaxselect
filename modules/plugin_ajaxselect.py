@@ -156,14 +156,12 @@ class AjaxSelect(object):
         self.linktable = get_linktable(field)
         # processed variables
         self.wrappername = self.get_wrappername(self.fieldset)
+        print '====================================='
+        print 'wrappername:', self.wrappername
         self.form_name = '%s_adder_form' % self.linktable  # for referenced table form
 
         # get the field value (choosing db or session here)
-        print '==========================================='
-        print 'modules/ajaxselect:: field ', field
-        print 'modules/ajaxselect:: raw value is ', value
         self.value = self.choose_val(value)
-        print 'modules/ajaxselect:: value from choose_val is', value
         try:
             if value and len(value) > 0:
                 self.clean_val = ','.join(map(str, value))
@@ -182,7 +180,8 @@ class AjaxSelect(object):
                       'lister': self.lister,
                       'restricted': self.restricted,
                       'sortable': self.sortable,
-                      'orderby': self.orderby}
+                      'orderby': self.orderby,
+                      'indx': self.indx}
 
     def widget(self):
         """

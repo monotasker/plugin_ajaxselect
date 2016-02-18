@@ -133,9 +133,9 @@ def linked_create_form():
 
         if form.process(formname=formname).accepted:
             response.flash = 'form accepted'
-            response.js = "window.setTimeout(" \
-                          "web2py_component('{}', '{}'), " \
-                          "500);".format(comp_url, wrappername)
+            # response.js = "window.setTimeout(" \
+            #               "web2py_component('{}', '{}'), " \
+            #               "500);".format(comp_url, wrappername)
 
             print 'linked create form accepted'
             print 'linked create form vars:'

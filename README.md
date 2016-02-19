@@ -10,6 +10,7 @@ This plugin creates a select widget wrapped that can be refreshed via ajax witho
 
 ## Dependencies
 
+| library    | details              |
 |------------|----------------------|
 | jquery-ui  | 'sortable' module used for reordering of selected values in the value list |
 | bootstrap3 | 'modal' javascript module used for the modal windows to hold forms that create and edit values |

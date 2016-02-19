@@ -10,16 +10,16 @@ This plugin creates a select widget wrapped that can be refreshed via ajax witho
 
 ## Dependencies
 
-This plugin relies on the jquery-ui library to generate the dialog used to add new items to the select list. If you would like to use your own dialog script (or a different ui library), simply remove the offending code in static/plugin_ajaxselect/plugin_ajaxselect.js and replace it with your favorite dialog script.
+| jquery-ui | 'sortable' module used for reordering of selected values in the value list |
+| bootstrap3 | 'modal' javascript module used for the modal windows to hold forms that create and edit values |
 
 ## Installation
 
-    1. download the plugin file;
-    2. In the web2py online ide (design view for your app) scroll to the bottom section labeled "Plugins"; 
-    3. At the bottom of that section is a widget to "upload plugin file". Click "Browse".
-    4. In the file selection window that opens, navigate to the downloaded plugin file, select it, and 
-        click "open". The file selection window should close.
-    5. Click the "upload" button.
+1. download the plugin file;
+2. In the web2py online ide (design view for your app) scroll to the bottom section labeled "Plugins"; 
+3. At the bottom of that section is a widget to "upload plugin file". Click "Browse".
+4. In the file selection window that opens, navigate to the downloaded plugin file, select it, and click "open". The file selection window should close.
+5. Click the "upload" button.
 
 The plugin should now be installed and ready to use.
 

@@ -156,8 +156,6 @@ class AjaxSelect(object):
         self.linktable = get_linktable(field)
         # processed variables
         self.wrappername = self.get_wrappername(self.fieldset)
-        print '====================================='
-        print 'wrappername:', self.wrappername
         self.form_name = '%s_adder_form' % self.linktable  # for referenced table form
 
         # get the field value (choosing db or session here)
@@ -196,8 +194,8 @@ class AjaxSelect(object):
         wrapper = SPAN(_id=self.wrappername, _class=wclasses)
         wrapper.append(LOAD('plugin_ajaxselect', 'set_widget.load',
                             args=self.uargs, vars=uvars,
-                            target=self.wrappername))
-        print 'AjaxSelect::widget: val =', self.value, '(', self.fieldset[1], ')'
+                            target=self.wrappername,
+                            ajax=False))
         return wrapper
 
     def widget_contents(self):
@@ -302,7 +300,6 @@ class AjaxSelect(object):
         """
         create either a single select widget or multiselect widget
         """
-        print 'AjaxSelect::create_widget: value =', self.value
         if not self.multi in [None, False, 'False']:
             if self.orderby:
                 w = FilteredMultipleOptionsWidget.widget(self.field, self.value,
@@ -333,7 +330,6 @@ class AjaxSelect(object):
                 w = FilteredOptionsWidget.widget(self.field, self.value,
                                                  orderby=self.orderby)
             else:
-                print 'AjaxSelect::create_widget: value =', self.value
                 w = OptionsWidget.widget(self.field, self.value)
 
         w['_id'] = '{}_{}'.format(self.fieldset[0], self.fieldset[1])
@@ -386,7 +382,6 @@ class AjaxSelect(object):
             add_modal = adder[1]
             return add_trigger, add_modal
         except Exception:
-            print 'error in make_adder'
             print traceback.format_exc(5)
 
     def make_taglist(self):
@@ -490,7 +485,6 @@ class FilteredAjaxSelect(AjaxSelect):
 
     def create_widget(self):
         """create either a single select widget or multiselect widget"""
-        print 'FilteredAjaxSelect::create_widget: rval is', self.rval
         if not self.multi in [None, False, 'False']:
             if self.orderby or self.rval:
                 w = FilteredMultipleOptionsWidget.widget(self.field, self.value,
@@ -502,7 +496,6 @@ class FilteredAjaxSelect(AjaxSelect):
                 w = MultipleOptionsWidget.widget(self.field, self.value)
             #place selected items at end of sortable select widget
             if self.sortable:
-                print 'val: ', self.value
                 try:
                     for v in self.value:
                         opt = w.element(_value=v)
@@ -556,7 +549,6 @@ class FilteredOptionsWidget(OptionsWidget):
             :meth:`FormWidget.widget`
             :meth:`OptionsWidget.widget`
         """
-        print 'FilteredOptionsWidget for', field, '============================'
         db = current.db
 
         default = {'value': value}
@@ -575,8 +567,6 @@ class FilteredOptionsWidget(OptionsWidget):
             else:
                 raise SyntaxError(
                     'widget cannot get options of %s' % field)
-        print 'first raw option:', options[0]
-        print 'options', options
 
         # get the table referenced by this field
         linktable = get_linktable(field)
@@ -594,7 +584,6 @@ class FilteredOptionsWidget(OptionsWidget):
                     value = value.replace("|", "");
                 filter_row = db(field == value).select().first()
                 filter_val = filter_row[filter_field] if filter_row else None
-            print 'filter_val:', filter_val
             if filter_val:
                 # get the table referenced by the restricting field
                 filter_linktable = get_linktable(filter_field)
@@ -621,19 +610,15 @@ class FilteredOptionsWidget(OptionsWidget):
         value = value[0] if (isinstance(value, list) and len(value) == 1) else value
         if rows:
             if value:
-                print 'value is', value
                 val_option = [o for r in rows for o in options
                               if o[0] and r.id == int(o[0])and o[0] == str(value)][0]
                 f_options.append(val_option)
-                print 'val_option', val_option
             f_options.extend([o for r in rows for o in options
                               if o[0] and r.id == int(o[0]) and r.id != str(value)])
             opts = [OPTION(v, _value=k) for (k, v) in f_options]
         else:
             opts = []
         widget = SELECT(*opts, **attr)
-        print 'FilteredOptionsWidget::widget: value =', value
-        print '-------------------------------------------------'
 
         return widget
 

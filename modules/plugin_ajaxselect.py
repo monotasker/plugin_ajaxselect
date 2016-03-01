@@ -139,12 +139,11 @@ class AjaxSelect(object):
 
         # raw args
         self.field = field
-        self.indx = indx
+        self.indx = indx if indx else 0
         self.refresher = refresher
         self.adder = adder
-        # isolate setting of param for easy overriding in subclasses
-        self.restricted = self.restrict(restricted)
         self.restrictor = restrictor
+        self.restricted = restricted
         self.multi = multi
         self.lister = lister
         self.rval = rval
@@ -155,11 +154,11 @@ class AjaxSelect(object):
         self.fieldset = str(field).split('.')
         self.linktable = get_linktable(field)
         # processed variables
-        self.wrappername = self.get_wrappername(self.fieldset)
+        self.wrappername = '{}_{}'.format(self.fieldset[0], self.fieldset[1])
         self.form_name = '%s_adder_form' % self.linktable  # for referenced table form
 
         # get the field value (choosing db or session here)
-        self.value = self.choose_val(value)
+        self.value = value
         try:
             if value and len(value) > 0:
                 self.clean_val = ','.join(map(str, value))
@@ -185,126 +184,37 @@ class AjaxSelect(object):
         """
         Place initial load container for controller to fill.
         """
-        # prepare classes for widget wrapper
-        wclasses = self.get_classes(self.linktable, self.restricted,
-                                    self.restrictor, self.lister, self.sortable)
-        uvars = self.uvars
-        uvars.update({self.fieldset[1]: self.value})
-        # create SPAN to wrap widget
-        wrapper = SPAN(_id=self.wrappername, _class=wclasses)
-        wrapper.append(LOAD('plugin_ajaxselect', 'set_widget.load',
-                            args=self.uargs, vars=uvars,
-                            target=self.wrappername,
-                            ajax=False))
-        return wrapper
-
-    def widget_contents(self):
-        """
-        Main method to create the ajaxselect widget. Calls helper methods
-        and returns the wrapper element containing all associated elements
-        """
-        #session = current.session
-        #request = current.request
-
         wrapper = CAT()
 
         # create and add content of SPAN
-        widget = self.create_widget()
-        refreshlink = self.make_refresher(self.wrappername, self.linktable,
+        widget = self._create_widget()
+        refreshlink = self._make_refresher(self.wrappername, self.linktable,
                                           self.uargs, self.uvars)
-        adder, modal = self.make_adder(self.wrappername, self.linktable)
+        adder, modal = self._make_adder(self.wrappername, self.linktable)
         wrapper.components.extend([widget, refreshlink, adder])
 
         # create and add tags/links if multiple select widget
         if self.multi and (self.lister == 'simple'):
-            taglist = self.make_taglist()
+            taglist = self._make_taglist()
         elif self.multi and (self.lister == 'editlinks'):
-            taglist = self.make_linklist()
+            taglist = self._make_linklist()
         else:
             taglist = ''
         wrapper.append(taglist)
 
         return wrapper, modal
 
-    def get_widget_index(self):
+    def _create_widget(self):
         """
-        Return an int differentiating widget from others referencing the same
-        table.
-
-        At present this simply returns the value of self.indx.
-        """
-        # TODO: Can this index be drawn automatically from the table
-        # definition so that it doesn't have to be set manually?
-        #db = current.db
-        #table = db[self.field.table]
-        #thefields = []
-        #for f in [f for f in table.fields]:
-            #if table[f].widget:
-                #try:
-                    #if table[f].requires.ktable == self.linktable:
-                        #thefields.append(f)
-                #except AttributeError:
-                    #try:
-                        #if table[f].requires[0].ktable == self.linktable:
-                            #thefields.append(f)
-                    #except IndexError:
-                        #pass  # FIXME: problem with list:string fields
-        #if len(thefields) > 1:  # FIXME: why are single fields picked up?
-            #current_i = thefields.index(self.fieldset[1])
-            #return current_i
-        #else:
-            #return None
-        indx = self.indx if self.indx else 0
-        return indx
-
-    def get_wrappername(self, fieldset):
-        """
-        Return id string for the widget wrapper element.
-
-        Make sure that widgets using the same link table have distinct ids,
-        using get_widget_index() method.
-        """
-        windex = self.get_widget_index()
-        if not windex:
-            windex = 0
-        name = '{}_{}_loader{}'.format(fieldset[0], fieldset[1], str(windex))
-        return name
-
-    def choose_val(self, value):
-        """
-        Use value stored in session if changes to widget haven't been sent to
-        db session val must be reset to None each time it is checked.
-
-        Always returns the value either as a list of integers or None.
-        """
-        session = current.session
-
-        val = value
-        if (self.wrappername in session.keys()):
-            if session[self.wrappername]:
-                val = session[self.wrappername]
-                del session[self.wrappername]
-            else:
-                del session[self.wrappername]
-        else:
-            pass
-
-        return sanitize_int_list(val)
-
-    def restrict(self, restricted):
-        """Isolate creation of this value so that it can be overridden in
-        child classes."""
-        return None
-
-    def create_widget(self):
-        """
-        create either a single select widget or multiselect widget
+        Create either a single select widget or multiselect widget
         """
         if not self.multi in [None, False, 'False']:
-            if self.orderby:
+            if self.orderby or self.rval:
                 w = FilteredMultipleOptionsWidget.widget(self.field, self.value,
                                                  orderby=self.orderby,
-                                                 multiple='multiple')
+                                                 multiple='multiple',
+                                                 restricted=self.restricted,
+                                                 rval=self.rval)
             else:
                 w = MultipleOptionsWidget.widget(self.field, self.value)
             #place selected items at end of sortable select widget
@@ -326,17 +236,24 @@ class AjaxSelect(object):
                 except Exception, e:
                         print e, type(e)
         else:
-            if self.orderby:
+            if self.orderby or self.rval:
                 w = FilteredOptionsWidget.widget(self.field, self.value,
-                                                 orderby=self.orderby)
+                                                 orderby=self.orderby,
+                                                 restricted=self.restricted,
+                                                 rval=self.rval)
             else:
                 w = OptionsWidget.widget(self.field, self.value)
 
         w['_id'] = '{}_{}'.format(self.fieldset[0], self.fieldset[1])
         w['_name'] = self.fieldset[1]
+        if not self.multi in [None, False, 'False']:
+            w['_class'] = 'plugin_ajaxselect multiple'
+        else:
+            w['_class'] = 'plugin_ajaxselect'
+
         return w
 
-    def make_refresher(self, wrappername, linktable, uargs, uvars):
+    def _make_refresher(self, wrappername, linktable, uargs, uvars):
         '''
         Return link to refresh this widget via ajax.
 
@@ -350,7 +267,7 @@ class AjaxSelect(object):
         rstyle = ''
         if self.refresher in (False, 'False'):
             rstyle = 'display:none'
-        comp_url = URL('plugin_ajaxselect', 'set_widget.load',
+        comp_url = URL('plugin_ajaxselect', 'get_values',
                        args=self.uargs, vars=self.uvars)
         ajs = 'ajax("{url}", ["{n}"], "{wn}"); ' \
               'return false;'.format(url=comp_url,
@@ -363,7 +280,7 @@ class AjaxSelect(object):
 
         return refresh_link
 
-    def make_adder(self, wrappername, linktable):
+    def _make_adder(self, wrappername, linktable):
         '''Build link for adding a new entry to the linked table'''
         try:
             # attrs = {'_href': URL('plugin_ajaxselect', 'linked_create_form.load',
@@ -384,7 +301,7 @@ class AjaxSelect(object):
         except Exception:
             print traceback.format_exc(5)
 
-    def make_taglist(self):
+    def _make_taglist(self):
         """Build a list of selected widget options to be displayed as a
         list of 'tags' below the widget."""
         try:
@@ -410,7 +327,7 @@ class AjaxSelect(object):
             print traceback.format_exc(5)
         return taglist
 
-    def make_linklist(self):
+    def _make_linklist(self):
         """
         Build a list of selected widget options to be displayed as a
         list of 'tags' below the widget.
@@ -451,79 +368,23 @@ class AjaxSelect(object):
                 ll.append(ln)
         return ll
 
-    def get_classes(self, linktable, restricted, restrictor, lister, sortable):
-        """
-        build classes for wrapper span to indicate filtering relationships
-        """
-        classlist = 'plugin_ajaxselect {} '.format(linktable)
-        if not restrictor in [None, 'False']:
-            classlist += 'restrictor restrictor_for_{} '.format(restrictor)
-        if restricted and restricted != 'False':
-            classlist += 'restricted restricted_by_{} '.format(restricted)
-        if lister == 'simple':
-            classlist += 'lister_simple '
-        elif lister == 'editlinks':
-            classlist += 'lister_editlinks '
-        if sortable:
-            classlist += 'sortable '
-
-        return classlist
-
-
-class FilteredAjaxSelect(AjaxSelect):
-    """
-    This class extends the AjaxSelect base class to provide a select
-    widget whose options are filtered in real time (via ajax refresh) based
-    on the value set in another AjaxSelect widget in the same form.
-    """
-
-    def restrict(self, restricted):
-        """Override parent restricted() method to allow a defined parameter
-        with this name to take effect."""
-
-        return restricted
-
-    def create_widget(self):
-        """create either a single select widget or multiselect widget"""
-        if not self.multi in [None, False, 'False']:
-            if self.orderby or self.rval:
-                w = FilteredMultipleOptionsWidget.widget(self.field, self.value,
-                                                 orderby=self.orderby,
-                                                 multiple='multiple',
-                                                 restricted=self.restricted,
-                                                 rval=self.rval)
-            else:
-                w = MultipleOptionsWidget.widget(self.field, self.value)
-            #place selected items at end of sortable select widget
-            if self.sortable:
-                try:
-                    for v in self.value:
-                        opt = w.element(_value=v)
-                        i = w.elements().index(opt)
-                        w.append(opt)
-                        del w[i - 1]
-                except AttributeError, e:
-                    if type(v) == 'IntType':
-                        opt = w.element(_value=self.value)
-                        i = w.elements().index(opt)
-                        w.append(opt)
-                        del w[i - 1]
-                    else:
-                        print e
-                except Exception, e:
-                        print e, type(e)
-        else:
-            if self.orderby or self.rval:
-                w = FilteredOptionsWidget.widget(self.field, self.value,
-                                                 orderby=self.orderby,
-                                                 restricted=self.restricted,
-                                                 rval=self.rval)
-            else:
-                w = OptionsWidget.widget(self.field, self.value)
-
-        w['_id'] = '{}_{}'.format(self.fieldset[0], self.fieldset[1])
-        w['_name'] = self.fieldset[1]
-        return w
+    # def get_classes(self, linktable, restricted, restrictor, lister, sortable):
+    #     """
+    #     build classes for wrapper span to indicate filtering relationships
+    #     """
+    #     classlist = 'plugin_ajaxselect {} '.format(linktable)
+    #     if not restrictor in [None, 'False']:
+    #         classlist += 'restrictor restrictor_for_{} '.format(restrictor)
+    #     if restricted and restricted != 'False':
+    #         classlist += 'restricted restricted_by_{} '.format(restricted)
+    #     if lister == 'simple':
+    #         classlist += 'lister_simple '
+    #     elif lister == 'editlinks':
+    #         classlist += 'lister_editlinks '
+    #     if sortable:
+    #         classlist += 'sortable '
+    #
+    #     return classlist
 
 
 class FilteredOptionsWidget(OptionsWidget):
@@ -668,7 +529,7 @@ class FilteredMultipleOptionsWidget(MultipleOptionsWidget):
         linktable = get_linktable(field)
 
         # get the value of the restricting field
-        if restricted:
+        if restricted not in [None, 'None', 'none']:
             table = field.table
             filter_field = table[restricted]
             if rval:

@@ -1,72 +1,68 @@
-from plugin_ajaxselect import AjaxSelect, FilteredAjaxSelect, get_linktable
+from plugin_ajaxselect import AjaxSelect, get_linktable, FilteredOptionsWidget, FilteredMultipleOptionsWidget
 from pprint import pprint
 if 0:
     from gluon import current, SQLFORM, URL
     request, session, response = current.request, current.session, current.response
     db = current.db
 
-
-def set_widget():
+def get_values():
     """
-    Return a replacement AjaxSelect or FilteredAjaxSelect widget via ajax.
+    Retrieve the current values from the widget's db table for refreshed widget.
     """
-    #get variables to build widget for the proper field
-
     tablename = request.args[0]
     fieldname = request.args[1]
     table = db[tablename]
     field = table[fieldname]
+    multi = request.vars['multi'] if 'multi' in request.vars.keys() else None
+    orderby = request.vars['orderby'] if 'orderby' in request.vars.keys() else None
+    rval = request.vars['rval'] if 'rval' in request.vars.keys() else None
+    restricted = request.vars['restricted'] if 'restricted' in request.vars.keys() else None
+    restrictor = request.vars['restrictor'] if 'restrictor' in request.vars.keys() else None
+    sortable = request.vars['sortable'] if 'restricted' in request.vars.keys() else None
+    value = request.vars[fieldname]
+
     linktable = get_linktable(field)
 
-    value = request.vars[fieldname]
-    print 'controller::set_widget: val =', value
-    rval = request.vars['rval'] if 'rval' in request.vars.keys() else None
-    kwargs = {'indx': request.vars['indx'],
-              'refresher': request.vars['refresher'],
-              'adder': request.vars['adder'],
-              'restrictor': request.vars['restrictor'],
-              'multi': request.vars['multi'],
-              'lister': request.vars['lister'],
-              'restricted': request.vars['restricted'],
-              'sortable': request.vars['sortable'],
-              'orderby': request.vars['orderby']}
-    #print 'controller: kwargs is ', kwargs
-    if request.vars['restricted'] in (None, 'None'):
-        w, modal = AjaxSelect(field, value, **kwargs).widget_contents()
+    if not multi in [None, False, 'False']:
+        if orderby or rval:
+            w = FilteredMultipleOptionsWidget.widget(field, value,
+                                             orderby=orderby,
+                                             multiple='multiple',
+                                             restricted=restricted,
+                                             rval=rval)
+        else:
+            w = MultipleOptionsWidget.widget(field, value)
+        #place selected items at end of sortable select widget
+        if sortable:
+            try:
+                for v in self.value:
+                    opt = w.element(_value=v)
+                    i = w.elements().index(opt)
+                    w.append(opt)
+                    del w[i - 1]
+            except AttributeError, e:
+                if type(v) == 'IntType':
+                    opt = w.element(_value=self.value)
+                    i = w.elements().index(opt)
+                    w.append(opt)
+                    del w[i - 1]
+                else:
+                    print e
+            except Exception, e:
+                    print e, type(e)
     else:
-        w, modal = FilteredAjaxSelect(field, value, rval=rval,
-                                      **kwargs).widget_contents()
+        if self.orderby or self.rval:
+            w = FilteredOptionsWidget.widget(field, value,
+                                             orderby=orderby,
+                                             restricted=restricted,
+                                             rval=rval)
+        else:
+            w = OptionsWidget.widget(field, value)
 
-    return dict(wrapper=w,
-                modal=modal,
-                linktable=linktable,
-                tablename=tablename,
-                wrappername=request.vars['wrappername'])
+    options = w.elements('option')
+    print options
+    return CAT(options)
 
-#def setval():
-    #"""Called when user changes value of AjaxSelect widget. Stores the current
-    #widget state in a session object to be used if the widget is refreshed
-    #before the form is processed."""
-
-    #theinput = request.args[0]
-    #wrappername = theinput.replace('_input', '')
-    #curval = listcheck(request.vars[theinput])[0]
-    #curval = str(curval).split(',')
-    #curvalInts = [int(i) for i in curval if i]  # condition for None val
-    #session[wrappername] = curvalInts
-
-    #return curval
-
-
-#def set_form_wrapper():
-    #"""
-    #Creates the LOAD helper to hold the modal form for creating a new item in
-    #the linked table
-    #"""
-    #if len(request.args) > 2:
-        #form_maker = 'linked_edit_form.load'
-    #else:
-        #form_maker = 'linked_create_form.load'
 
 def linked_edit_form():
     """

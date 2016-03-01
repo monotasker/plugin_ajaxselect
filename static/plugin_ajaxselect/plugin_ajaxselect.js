@@ -1,14 +1,34 @@
 // Javascript for the AjaxSelect and related widgets
 // part of the plugin_ajaxselect plugin for web2py
 
-// TODO: Bind a separate function to the select if multi=False or no taglist
-// when select value is changed, update
+// bind even triggers ==============================================================
+// $('ul.sortable').sortable({
+//     placeholder: 'ui-state-highlight',
+//     stop: function(event, ui){
+//         var $taglist = $(event.target).find('li');
+//         whenSortStops($taglist);
+//         }
+// });
+// $('ul.sortable').disableSelection();
+$(document).on('click', '.plugin_ajaxselect.multiple option', function(event){
+    addtag(event, event.target);
+});
+$(document).on('click', '.plugin_ajaxselect option', function(event){
+    $p = $(this).parents('div.w2p_fw');
+    if ( $p.hasClass('restrictor') ){
+        triggerRestriction($(this));
+    }
+});
+$(document).on('click', 'div.w2p_fw a.tag_remover', function(event){
+    removetag(event, event.target);
+});
 
 function addtag(e, opt){
     // COMMON get landmarks to navigate dom =====================
-    var $p = $(opt).parents('span');
+    var $p = $(opt).parents('div.w2p_fw');
     // get $select, wrappername, $td in info object
     var myinfo = info($p);
+    console.log(myinfo);
     var r_url = geturl(myinfo.td);
 
     //add tag for this option to taglist =======================
@@ -159,8 +179,8 @@ function isValue(x){
 
 //utility - get basic landmarks for traversing dom
 function info($p){
-    var wrappername = $p.attr('id');
     var $select = $p.find('select');
+    var wrappername = $select.attr('id');
     var $td = $p.parents('li, td');
     return {'wrappername':wrappername, 'select':$select, 'td':$td}
 }

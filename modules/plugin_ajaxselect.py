@@ -433,7 +433,7 @@ class FilteredOptionsWidget(OptionsWidget):
         linktable = get_linktable(field)
 
         # get the value of the restricting field
-        if restricted:
+        if restricted not in [None, 'None', 'none']:
             table = field.table
             filter_field = table[restricted]
             if rval:
@@ -468,11 +468,16 @@ class FilteredOptionsWidget(OptionsWidget):
 
         # build widget with filtered and ordered options
         f_options = []
-        value = value[0] if (isinstance(value, list) and len(value) == 1) else value
+        print 'value is', value
+        value = value[0] if (isinstance(value, list) and len([v for v in value if v]) == 1) else value
+        print 'value is', value
+        print 'options are', options
         if rows:
             if value:
                 val_option = [o for r in rows for o in options
-                              if o[0] and r.id == int(o[0])and o[0] == str(value)][0]
+                              if o[0] and r.id == int(o[0]) and o[0] == str(value)]
+                print 'val_option', val_option
+                val_option = val_option[0]
                 f_options.append(val_option)
             f_options.extend([o for r in rows for o in options
                               if o[0] and r.id == int(o[0]) and r.id != str(value)])

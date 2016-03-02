@@ -1,15 +1,7 @@
 // Javascript for the AjaxSelect and related widgets
 // part of the plugin_ajaxselect plugin for web2py
 
-// bind even triggers ==============================================================
-// $('ul.sortable').sortable({
-//     placeholder: 'ui-state-highlight',
-//     stop: function(event, ui){
-//         var $taglist = $(event.target).find('li');
-//         whenSortStops($taglist);
-//         }
-// });
-// $('ul.sortable').disableSelection();
+// bind event triggers =========================================================
 $(document).on('click', '.plugin_ajaxselect.multiple option', function(event){
     addtag(event, event.target);
 });
@@ -22,13 +14,49 @@ $(document).on('click', '.plugin_ajaxselect option', function(event){
 $(document).on('click', 'div.w2p_fw a.tag_remover', function(event){
     removetag(event, event.target);
 });
+$(document).on('click', 'div.w2p_fw a.refresh_trigger', function(event){
+    update_tags(event, event.target);
+});
+
+
+// set up sorting ==============================================================
+$(document).ready(function(){
+    $('ul.sortable').sortable({
+        placeholder: 'ui-state-highlight',
+        stop: function(event, ui){
+            var $taglist = $(event.target).find('li');
+            whenSortStops($taglist);
+            }
+    });
+    $('ul.sortable').disableSelection();
+});
+
+function update_tags(e, btn){
+    // COMMON get landmarks to navigate dom =====================
+    var $p = $(btn).parents('div.w2p_fw');
+    // get $select, wrappername, $td in info object
+    var myinfo = info($p);
+    var r_url = geturl(myinfo.td);
+
+    // remove existing list of tags =============================
+    var $ul = $p.children('ul');
+    $li = $ul.children('li')
+    $li.each(function(){
+        $(this).remove();
+    });
+
+    // get array of selected options ============================
+    var $opts = myinfo.select.find('option:selected')
+    $opts.each(function(e){
+        addtag(e, $(this));
+    });
+}
 
 function addtag(e, opt){
     // COMMON get landmarks to navigate dom =====================
     var $p = $(opt).parents('div.w2p_fw');
     // get $select, wrappername, $td in info object
     var myinfo = info($p);
-    console.log(myinfo);
     var r_url = geturl(myinfo.td);
 
     //add tag for this option to taglist =======================
@@ -37,28 +65,32 @@ function addtag(e, opt){
     var newval = $(opt).attr('value');
     var newtext = $(opt).text();
     var newtag;
-    if($p.hasClass('lister_editlinks')){
+    var lister = new RegExp('[\?&]lister=([^&#]*)').exec(r_url.vars);
+    if( lister[1] == 'editlinks' ){
         newtag = editlink(linfo, r_url.args, r_url.vars, newval, newtext);
         $taglist.append(newtag);
     }
-    else if($p.hasClass('lister_simple')){
+    else if( lister[1] == 'simple' ){
         newtag = tag(newval, newtext);
         $taglist.append(newtag);
     }
     // FIXME: Shouldn't have to re-bind this here
-    $taglist.find('a.tag_remover').on('click', function(event){
-        removetag(event, event.target);
-    });
+    // $taglist.find('a.tag_remover').on('click', function(event){
+    //     removetag(event, event.target);
+    // });
     //make sure newly added tag is added to sortable binding
-    $('ul.sortable').sortable('refresh');
+    // $('ul.sortable').sortable('refresh');
     //update select value
     vals = valFromTags($taglist);
 
     myinfo.select.val(vals);
-    if ( $p.hasClass('restrictor') ){
+    var restrictor = new RegExp('[\?&]restrictor=([^&#]*)').exec(r_url.vars);
+    if ( restrictor[1].length ){
         triggerRestriction($(opt));
     }
-    e.preventDefault();
+    if ( typeof e != 'number' ) { // when called programmatically event is 0
+        e.preventDefault();
+    }
 }
 
 function valFromTags($taglist){
@@ -72,7 +104,7 @@ function valFromTags($taglist){
 
 function whenSortStops($taglist){
     //COMMON get landmarks to navigate dom =====================
-    var $p = $taglist.first().parents('span');
+    var $p = $taglist.first().parents('div.w2p_fw');
     var myinfo = info($p);
 
     //var vals = valFromTags($taglist);
@@ -94,17 +126,13 @@ function whenSortStops($taglist){
 //remove an option by clicking on the remover icon in a tag
 function removetag(e, tag){
     //COMMON get landmarks to navigate dom =====================
-    var $p = $(tag).parents('span');
-    console.log($p);
+    var $p = $(tag).parents('div.w2p_fw');
     //get select, wrappername, td in info object
     var myinfo = info($p);
-    console.log(myinfo);
     var $prnt = $(tag).closest('li');
-    console.log($prnt);
 
     //get value of removed option
     var val = $prnt.attr('id');
-    console.log(val);
     //remove option from list of selected values
     $prnt.remove();
 
@@ -129,7 +157,6 @@ function removetag(e, tag){
 //value is changed
 
 function triggerRestriction($option){
-    console.log('I fired!');
     //get selected value of the restrictor widget to use in constraining the
     //target widget
     var new_val = $option.parents('select').find('option:selected').val();
@@ -141,9 +168,8 @@ function triggerRestriction($option){
     //get field of the restrictor widget, again from its id
     var r_field = parts[1];
 
-    var classlist = $option.parents('span').attr('class').split(/\s+/);
+    var classlist = $option.parents('select').attr('class').split(/\s+/);
     var linktable = classlist[1]
-    console.log('linktable '+ linktable);
     //constrain and refresh each widget with a corresponding 'for_' class on
     //the restrictor widget
     //TODO: add logic in module to insert a for_ class for multiple
@@ -153,10 +179,8 @@ function triggerRestriction($option){
            //get name of field for widget to be constrained, from the
            //restrictor's classes
            field = item.substring(15);
-           console.log('field ' + field);
            //assemble name for span wrapping the widget to be constrained
            var span_id = table + '_' + field + '_loader0'
-           console.log(span_id);
            //assemble url to use for refreshing the constrained widget
            //from url set in modules/plugin_ajaxselect.py for adder
            //this should include the vars (url params) 'fieldval' and
@@ -165,7 +189,6 @@ function triggerRestriction($option){
            r_url += '&rval=' + new_val + '&rtable=' + linktable;
            //refresh the widget by refreshing the contents of the wrapper
            //component
-           console.log(r_url);
            web2py_component(r_url, span_id);
        }
     });
@@ -179,7 +202,7 @@ function isValue(x){
 
 //utility - get basic landmarks for traversing dom
 function info($p){
-    var $select = $p.find('select');
+    var $select = $p.children('select.plugin_ajaxselect');
     var wrappername = $select.attr('id');
     var $td = $p.parents('li, td');
     return {'wrappername':wrappername, 'select':$select, 'td':$td}
@@ -188,12 +211,11 @@ function info($p){
 //utility - get url, a string with its args, and a string with its vars
 function geturl($td){
     var r_url = $td.find('a.refresh_trigger').attr('onclick');
-    var url_frag = r_url.match(/set_widget.load(.*)/);
+    var url_frag = r_url.match(/get_values.load(.*)/);
     var url_args_vars = url_frag[1].split('?');
     var url_args = url_args_vars[0];
     var url_vars_raw = url_args_vars[1].split('"')[0];
     var appname = r_url.split('/')[1];
-    console.log(url_vars_raw);
     return {'url':r_url, 'args':url_args,
             'vars':url_vars_raw, 'appname':appname}
 }

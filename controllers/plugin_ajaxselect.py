@@ -51,7 +51,7 @@ def get_values():
             except Exception, e:
                     print e, type(e)
     else:
-        if self.orderby or self.rval:
+        if orderby or rval:
             w = FilteredOptionsWidget.widget(field, value,
                                              orderby=orderby,
                                              restricted=restricted,
@@ -60,7 +60,6 @@ def get_values():
             w = OptionsWidget.widget(field, value)
 
     options = w.elements('option')
-    print options
     return CAT(options)
 
 
@@ -110,7 +109,6 @@ def linked_create_form():
     creates a form to insert a new entry into the linked table which populates
     the ajaxSelect widget
     """
-    print 'Starting linked_create_form'
     try:
         tablename = request.args[0]
         fieldname = request.args[1]
@@ -133,16 +131,16 @@ def linked_create_form():
             #               "web2py_component('{}', '{}'), " \
             #               "500);".format(comp_url, wrappername)
 
-            print 'linked create form accepted'
-            print 'linked create form vars:'
-            pprint(form.vars)
+            # print 'linked create form accepted'
+            # print 'linked create form vars:'
+            # pprint(form.vars)
         if form.errors:
             response.error = 'form was not processed'
             response.flash = 'form was not processed'
             print 'error processing linked_create_form'
             print form.errors
         else:
-            print 'form not processed but no errors'
+            # print 'form not processed but no errors'
             pass
 
     except Exception:

@@ -34,15 +34,17 @@ def get_values():
             w = MultipleOptionsWidget.widget(field, value)
         #place selected items at end of sortable select widget
         if sortable:
+            print 'trying to sort values ==========================='
+            print 'value is', value
             try:
-                for v in self.value:
+                for v in value:
                     opt = w.element(_value=v)
                     i = w.elements().index(opt)
                     w.append(opt)
                     del w[i - 1]
             except AttributeError, e:
                 if type(v) == 'IntType':
-                    opt = w.element(_value=self.value)
+                    opt = w.element(_value=value)
                     i = w.elements().index(opt)
                     w.append(opt)
                     del w[i - 1]
@@ -50,6 +52,7 @@ def get_values():
                     print e
             except Exception, e:
                     print e, type(e)
+            pprint([e['_value'] for e in w.elements()])
     else:
         if orderby or rval:
             w = FilteredOptionsWidget.widget(field, value,

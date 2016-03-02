@@ -2,6 +2,7 @@ from gluon import current, SPAN, A, UL, LI, OPTION, SELECT, LOAD, CAT
 from gluon.html import URL
 from gluon.sqlhtml import OptionsWidget, MultipleOptionsWidget
 from plugin_widgets import MODAL
+from pprint import pprint
 import traceback
 #import copy
 #TODO: add ListWidget as another option?
@@ -219,13 +220,20 @@ class AjaxSelect(object):
                 w = MultipleOptionsWidget.widget(self.field, self.value)
             #place selected items at end of sortable select widget
             if self.sortable:
+                print 'trying to sort values ============='
+                print 'value is', self.value
                 try:
                     for v in self.value:
-                        opt = w.element(_value=v)
+                        print '1'
+                        opt = w.element(_value=str(v))
+                        print '2'
                         i = w.elements().index(opt)
+                        print '3'
                         w.append(opt)
+                        print '4'
                         del w[i - 1]
                 except AttributeError, e:
+                    print 'error with', v
                     if type(v) == 'IntType':
                         opt = w.element(_value=self.value)
                         i = w.elements().index(opt)
@@ -235,8 +243,9 @@ class AjaxSelect(object):
                         print e
                 except Exception, e:
                         print e, type(e)
+                pprint([e['_value'] for e in w.elements()])
         else:
-            if self.orderby or self.rval:
+            if self.orderby or self.rval or self.restrictor:
                 w = FilteredOptionsWidget.widget(self.field, self.value,
                                                  orderby=self.orderby,
                                                  restricted=self.restricted,
@@ -246,10 +255,14 @@ class AjaxSelect(object):
 
         w['_id'] = '{}_{}'.format(self.fieldset[0], self.fieldset[1])
         w['_name'] = self.fieldset[1]
+        myclasses = 'plugin_ajaxselect '
         if not self.multi in [None, False, 'False']:
-            w['_class'] = 'plugin_ajaxselect multiple'
-        else:
-            w['_class'] = 'plugin_ajaxselect'
+            myclasses += 'multiple '
+        if not self.restrictor in [None, 'None', 'none']:
+            myclasses += 'restrictor for_{} '.format(self.restrictor)
+        if not self.restricted in [None, 'None', 'none']:
+            myclasses += 'restricted by_{} '.format(self.restricted)
+        w['_class'] = myclasses
 
         return w
 
@@ -397,7 +410,7 @@ class FilteredOptionsWidget(OptionsWidget):
     """
 
     @classmethod
-    def widget(cls, field, value, restricted=None, rval=None,
+    def widget(cls, field, value, restricted=None, restrictor=None, rval=None,
                orderby=None, multiple=False, **attributes):
         """
         generates a SELECT tag, including OPTIONs (only 1 option allowed)
@@ -468,10 +481,7 @@ class FilteredOptionsWidget(OptionsWidget):
 
         # build widget with filtered and ordered options
         f_options = []
-        print 'value is', value
         value = value[0] if (isinstance(value, list) and len([v for v in value if v]) == 1) else value
-        print 'value is', value
-        print 'options are', options
         if rows:
             if value:
                 val_option = [o for r in rows for o in options

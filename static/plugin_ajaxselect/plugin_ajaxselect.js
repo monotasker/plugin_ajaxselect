@@ -5,17 +5,19 @@
 $(document).on('click', '.plugin_ajaxselect.multiple option', function(event){
     addtag(event, event.target);
 });
-$(document).on('click', '.plugin_ajaxselect option', function(event){
+$(document).on('change', 'select.plugin_ajaxselect.restrictor', function(event){
+    console.log($('select.plugin_ajaxselect.restrictor'));
     $p = $(this).parents('div.w2p_fw');
-    if ( $p.hasClass('restrictor') ){
-        triggerRestriction($(this));
-    }
+    var newval = $(this).children('option:selected').val();
+    triggerRestriction($(this), newval);
 });
 $(document).on('click', 'div.w2p_fw a.tag_remover', function(event){
     removetag(event, event.target);
+    event.preventDefault();
 });
 $(document).on('click', 'div.w2p_fw a.refresh_trigger', function(event){
     update_tags(event, event.target);
+    event.preventDefault();
 });
 
 
@@ -84,10 +86,10 @@ function addtag(e, opt){
     vals = valFromTags($taglist);
 
     myinfo.select.val(vals);
-    var restrictor = new RegExp('[\?&]restrictor=([^&#]*)').exec(r_url.vars);
-    if ( restrictor[1].length ){
-        triggerRestriction($(opt));
-    }
+    // var restrictor = new RegExp('[\?&]restrictor=([^&#]*)').exec(r_url.vars);
+    // if ( restrictor[1].length ){
+    //     triggerRestriction($(opt));
+    // }
     if ( typeof e != 'number' ) { // when called programmatically event is 0
         e.preventDefault();
     }
@@ -156,40 +158,45 @@ function removetag(e, tag){
 //constrain and refresh appropriate select widgets if restrictor widget's
 //value is changed
 
-function triggerRestriction($option){
-    //get selected value of the restrictor widget to use in constraining the
-    //target widget
-    var new_val = $option.parents('select').find('option:selected').val();
-
+function triggerRestriction($select, new_val){
+    console.log('starting restriction');
     //get table of the current form from id of restrictor widget
-    var myid = $option.parents('select').attr('id');
+    var myid = $select.attr('id');
     var parts = myid.split('_');
     var table = parts[0];
     //get field of the restrictor widget, again from its id
     var r_field = parts[1];
 
-    var classlist = $option.parents('select').attr('class').split(/\s+/);
-    var linktable = classlist[1]
+    var classlist = $select.attr('class').split(/\s+/);
     //constrain and refresh each widget with a corresponding 'for_' class on
     //the restrictor widget
     //TODO: add logic in module to insert a for_ class for multiple
     //constrained fields
     $.each(classlist, function(index,item){
-       if(item.substring(0,15) == 'restrictor_for_'){
+       if(item.substring(0,4) == 'for_'){
            //get name of field for widget to be constrained, from the
            //restrictor's classes
-           field = item.substring(15);
+           field = item.substring(4);
            //assemble name for span wrapping the widget to be constrained
-           var span_id = table + '_' + field + '_loader0'
+           var select_id = table + '_' + field;
            //assemble url to use for refreshing the constrained widget
            //from url set in modules/plugin_ajaxselect.py for adder
            //this should include the vars (url params) 'fieldval' and
            //'multi'
-           var r_url = $('#' + span_id + ' .refresh_trigger').attr('href');
+           var $t_select = $('#' + select_id);
+           var t_classlist = $t_select.attr('class').split(/\s+/);
+           var linktable = '';
+           $.each(t_classlist, function(index,item) {
+               if (item.substring(0,3) == 'by_') {
+                   linktable = item.substring(3);
+               }
+           });
+           var r_url = $t_select.parents('div.w2p_fw').children('.refresh_trigger').attr('href');
            r_url += '&rval=' + new_val + '&rtable=' + linktable;
+           console.log(r_url);
            //refresh the widget by refreshing the contents of the wrapper
            //component
-           web2py_component(r_url, span_id);
+           ajax(r_url, [], select_id);
        }
     });
 }

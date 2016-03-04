@@ -57,8 +57,10 @@ function update_tags(e, btn){
 function addtag(e, opt){
     // COMMON get landmarks to navigate dom =====================
     var $p = $(opt).parents('div.w2p_fw');
+    console.log($p);
     // get $select, wrappername, $td in info object
     var myinfo = info($p);
+    console.log(myinfo);
     var r_url = geturl(myinfo.td);
 
     //add tag for this option to taglist =======================
@@ -211,14 +213,15 @@ function isValue(x){
 function info($p){
     var $select = $p.children('select.plugin_ajaxselect');
     var wrappername = $select.attr('id');
-    var $td = $p.parents('li, td');
+    var $td = $p.parents('li, td, div');
     return {'wrappername':wrappername, 'select':$select, 'td':$td}
 }
 
 //utility - get url, a string with its args, and a string with its vars
 function geturl($td){
+    console.log($td);
     var r_url = $td.find('a.refresh_trigger').attr('onclick');
-    var url_frag = r_url.match(/get_values.load(.*)/);
+    var url_frag = r_url.match(/get_values(.*)/);
     var url_args_vars = url_frag[1].split('?');
     var url_args = url_args_vars[0];
     var url_vars_raw = url_args_vars[1].split('"')[0];

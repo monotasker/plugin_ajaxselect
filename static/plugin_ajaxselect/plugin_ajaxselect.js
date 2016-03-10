@@ -57,15 +57,21 @@ function update_tags(e, btn){
 function addtag(e, opt){
     // COMMON get landmarks to navigate dom =====================
     var $p = $(opt).parents('div.w2p_fw');
+    console.log('$p');
     console.log($p);
     // get $select, wrappername, $td in info object
     var myinfo = info($p);
+    console.log('myinfo');
     console.log(myinfo);
-    var r_url = geturl(myinfo.td);
+    var r_url = geturl(myinfo.td.first());
 
     //add tag for this option to taglist =======================
     var $taglist = $p.find('.taglist');
+    console.log('taglist');
+    console.log($taglist);
     var linfo = linkinfo(r_url.url, r_url.vars);
+    console.log('linfo');
+    console.log(r_url.vars);
     var newval = $(opt).attr('value');
     var newtext = $(opt).text();
     var newtag;
@@ -78,12 +84,6 @@ function addtag(e, opt){
         newtag = tag(newval, newtext);
         $taglist.append(newtag);
     }
-    // FIXME: Shouldn't have to re-bind this here
-    // $taglist.find('a.tag_remover').on('click', function(event){
-    //     removetag(event, event.target);
-    // });
-    //make sure newly added tag is added to sortable binding
-    // $('ul.sortable').sortable('refresh');
     //update select value
     vals = valFromTags($taglist);
 
@@ -143,16 +143,6 @@ function removetag(e, tag){
     var $taglist = $p.find('.taglist');
     var vals = valFromTags($taglist);
     myinfo.select.val(vals);
-
-    //var vals = myinfo.$select.val()
-    //if (vals.length > 0){
-        //var i = vals.indexOf(val);
-        //vals.splice(i, 1);
-    //}
-    ////if the last item is being removed
-    //else {
-        //myinfo.$select.val(null);
-    //}
 
     e.preventDefault();
 }
@@ -219,6 +209,7 @@ function info($p){
 
 //utility - get url, a string with its args, and a string with its vars
 function geturl($td){
+    console.log('in geturl, $td');
     console.log($td);
     var r_url = $td.find('a.refresh_trigger').attr('onclick');
     var url_frag = r_url.match(/get_values(.*)/);

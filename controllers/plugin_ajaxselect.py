@@ -13,12 +13,12 @@ def get_values():
     fieldname = request.args[1]
     table = db[tablename]
     field = table[fieldname]
-    multi = request.vars['multi'] if 'multi' in request.vars.keys() else None
-    orderby = request.vars['orderby'] if 'orderby' in request.vars.keys() else None
-    rval = request.vars['rval'] if 'rval' in request.vars.keys() else None
-    restricted = request.vars['restricted'] if 'restricted' in request.vars.keys() else None
-    restrictor = request.vars['restrictor'] if 'restrictor' in request.vars.keys() else None
-    sortable = request.vars['sortable'] if 'restricted' in request.vars.keys() else None
+    multi = request.vars['multi'] if 'multi' in list(request.vars.keys()) else None
+    orderby = request.vars['orderby'] if 'orderby' in list(request.vars.keys()) else None
+    rval = request.vars['rval'] if 'rval' in list(request.vars.keys()) else None
+    restricted = request.vars['restricted'] if 'restricted' in list(request.vars.keys()) else None
+    restrictor = request.vars['restrictor'] if 'restrictor' in list(request.vars.keys()) else None
+    sortable = request.vars['sortable'] if 'restricted' in list(request.vars.keys()) else None
     value = request.vars[fieldname]
 
     linktable = get_linktable(field)
@@ -34,24 +34,24 @@ def get_values():
             w = MultipleOptionsWidget.widget(field, value)
         #place selected items at end of sortable select widget
         if sortable:
-            print 'trying to sort values ==========================='
-            print 'value is', value
+            print('trying to sort values ===========================')
+            print('value is', value)
             try:
                 for v in value:
                     opt = w.element(_value=v)
                     i = w.elements().index(opt)
                     w.append(opt)
                     del w[i - 1]
-            except AttributeError, e:
+            except AttributeError as e:
                 if type(v) == 'IntType':
                     opt = w.element(_value=value)
                     i = w.elements().index(opt)
                     w.append(opt)
                     del w[i - 1]
                 else:
-                    print e
-            except Exception, e:
-                    print e, type(e)
+                    print(e)
+            except Exception as e:
+                    print(e, type(e))
             pprint([e['_value'] for e in w.elements()])
     else:
         if orderby or rval:
@@ -94,14 +94,14 @@ def linked_edit_form():
             response.js = "web2py_component('%s', '%s');" % (comp_url, wrappername)
         if form.errors:
             response.error = 'form was not processed'
-            print 'error processing linked_create_form'
-            print form.errors
+            print('error processing linked_create_form')
+            print(form.errors)
         else:
             pass
     except Exception:
         import traceback
-        print 'error in whole of linked_edit_form'
-        print traceback.format_exc(5)
+        print('error in whole of linked_edit_form')
+        print(traceback.format_exc(5))
         form = traceback.format_exc(5)
 
     return {'form': form}
@@ -140,15 +140,15 @@ def linked_create_form():
         if form.errors:
             response.error = 'form was not processed'
             response.flash = 'form was not processed'
-            print 'error processing linked_create_form'
-            print form.errors
+            print('error processing linked_create_form')
+            print(form.errors)
         else:
             # print 'form not processed but no errors'
             pass
 
     except Exception:
         import traceback
-        print traceback.format_exc(5)
+        print(traceback.format_exc(5))
         form = traceback.format_exc(5)
 
     return dict(form=form)

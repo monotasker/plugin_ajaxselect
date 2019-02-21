@@ -1,7 +1,7 @@
 from gluon import current, SPAN, A, UL, LI, OPTION, SELECT, LOAD, CAT
 from gluon.html import URL
 from gluon.sqlhtml import OptionsWidget, MultipleOptionsWidget
-from plugin_widgets import MODAL
+from .plugin_widgets import MODAL
 from pprint import pprint
 import traceback
 #import copy
@@ -220,29 +220,29 @@ class AjaxSelect(object):
                 w = MultipleOptionsWidget.widget(self.field, self.value)
             #place selected items at end of sortable select widget
             if self.sortable:
-                print 'trying to sort values ============='
-                print 'value is', self.value
+                print('trying to sort values =============')
+                print('value is', self.value)
                 try:
                     for v in self.value:
-                        print '1'
+                        print('1')
                         opt = w.element(_value=str(v))
-                        print '2'
+                        print('2')
                         i = w.elements().index(opt)
-                        print '3'
+                        print('3')
                         w.append(opt)
-                        print '4'
+                        print('4')
                         del w[i - 1]
-                except AttributeError, e:
-                    print 'error with', v
+                except AttributeError as e:
+                    print('error with', v)
                     if type(v) == 'IntType':
                         opt = w.element(_value=self.value)
                         i = w.elements().index(opt)
                         w.append(opt)
                         del w[i - 1]
                     else:
-                        print e
-                except Exception, e:
-                        print e, type(e)
+                        print(e)
+                except Exception as e:
+                        print(e, type(e))
                 pprint([e['_value'] for e in w.elements()])
         else:
             if self.orderby or self.rval or self.restrictor:
@@ -312,7 +312,7 @@ class AjaxSelect(object):
             add_modal = adder[1]
             return add_trigger, add_modal
         except Exception:
-            print traceback.format_exc(5)
+            print(traceback.format_exc(5))
 
     def _make_taglist(self):
         """Build a list of selected widget options to be displayed as a
@@ -337,7 +337,7 @@ class AjaxSelect(object):
             else:
                 pass
         except Exception:
-            print traceback.format_exc(5)
+            print(traceback.format_exc(5))
         return taglist
 
     def _make_linklist(self):
@@ -486,7 +486,7 @@ class FilteredOptionsWidget(OptionsWidget):
             if value:
                 val_option = [o for r in rows for o in options
                               if o[0] and r.id == int(o[0]) and o[0] == str(value)]
-                print 'val_option', val_option
+                print('val_option', val_option)
                 val_option = val_option[0]
                 f_options.append(val_option)
             f_options.extend([o for r in rows for o in options
@@ -538,7 +538,7 @@ class FilteredMultipleOptionsWidget(MultipleOptionsWidget):
             try:
                 options = requires[0].options()
             except SyntaxError:
-                print 'widget cannot get options of %s' % field
+                print('widget cannot get options of %s' % field)
 
         # get the table referenced by this field
         linktable = get_linktable(field)

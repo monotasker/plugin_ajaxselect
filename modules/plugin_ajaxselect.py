@@ -572,7 +572,8 @@ class FilteredMultipleOptionsWidget(MultipleOptionsWidget):
             rows = db(db[linktable].id > 0).select(orderby=myorder)
 
         # build widget with filtered and ordered options
-        f_options = [o for r in rows for o in options if r.id == int(o[0])]
+        print options
+        f_options = [o for r in rows for o in options if o[0] and r.id == int(o[0])]
         opts = [OPTION(v, _value=k) for (k, v) in f_options]
         widget = SELECT(*opts, **attr)
 
